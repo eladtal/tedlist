@@ -27,6 +27,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { TradeInteractionProvider } from './contexts/TradeInteractionContext';
 import { AdminProvider } from './contexts/AdminContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
+import { PointsProvider } from './contexts/PointsContext';
 
 // Private Route component to protect authenticated routes
 const PrivateRoute = ({ children }) => {
@@ -224,11 +225,13 @@ function App() {
         <NotificationProvider>
           <TradeInteractionProvider>
             <AdminProvider>
-              <OnboardingProvider>
-                <Router>
-                  <AppContent />
-                </Router>
-              </OnboardingProvider>
+              <PointsProvider>
+                <OnboardingProvider>
+                  <Router>
+                    <AppContent />
+                  </Router>
+                </OnboardingProvider>
+              </PointsProvider>
             </AdminProvider>
           </TradeInteractionProvider>
         </NotificationProvider>
