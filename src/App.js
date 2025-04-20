@@ -7,6 +7,7 @@ import GlobalStyles from './styles/GlobalStyles';
 import Navbar from './components/common/Navbar';
 import HomeScreen from './components/Home/HomeScreen';
 import SwipeScreen from './components/Swipe/SwipeScreen';
+import SwipeHistoryScreen from './components/Swipe/SwipeHistoryScreen';
 import ItemDetailScreen from './components/ItemDetail/ItemDetailScreen';
 import UploadScreen from './components/Upload/UploadScreen';
 import ProfileScreen from './components/Profile/ProfileScreen';
@@ -16,11 +17,16 @@ import ChatScreen from './components/Messages/ChatScreen';
 import TradePage from './components/Trade/TradePage';
 import TradeSwipe from './components/Trade/TradeSwipe';
 import ShareScreen from './components/Social/ShareScreen';
+import NotificationsScreen from './components/Notifications/NotificationsScreen';
+import AdminScreen from './components/Admin/AdminScreen';
+import OnboardingScreen from './components/Onboarding/OnboardingScreen';
 import LoginScreen from './components/Auth/LoginScreen';
 import SignupScreen from './components/Auth/SignupScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { TradeInteractionProvider } from './contexts/TradeInteractionContext';
+import { AdminProvider } from './contexts/AdminContext';
+import { OnboardingProvider } from './contexts/OnboardingContext';
 
 // Private Route component to protect authenticated routes
 const PrivateRoute = ({ children }) => {
@@ -29,6 +35,20 @@ const PrivateRoute = ({ children }) => {
   
   if (!currentUser) {
     // Redirect to login if not authenticated
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  return children;
+};
+
+// Admin Route component to protect admin routes
+const AdminRoute = ({ children }) => {
+  const { currentUser } = useAuth();
+  const location = useLocation();
+  
+  // In a real app, we would check if the user is an admin here
+  // For now, we'll just check if they're authenticated
+  if (!currentUser) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
@@ -71,6 +91,14 @@ const AppContent = () => {
           element={
             <PrivateRoute>
               <SwipeScreen />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/swipe-history" 
+          element={
+            <PrivateRoute>
+              <SwipeHistoryScreen />
             </PrivateRoute>
           } 
         />
@@ -131,6 +159,22 @@ const AppContent = () => {
           } 
         />
         <Route 
+          path="/notifications" 
+          element={
+            <PrivateRoute>
+              <NotificationsScreen />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/onboarding" 
+          element={
+            <PrivateRoute>
+              <OnboardingScreen />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
           path="/share/:id" 
           element={
             <PrivateRoute>
@@ -144,6 +188,14 @@ const AppContent = () => {
             <PrivateRoute>
               <ShareScreen />
             </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/admin" 
+          element={
+            <AdminRoute>
+              <AdminScreen />
+            </AdminRoute>
           } 
         />
       </Routes>
@@ -171,9 +223,13 @@ function App() {
       <AuthProvider>
         <NotificationProvider>
           <TradeInteractionProvider>
-            <Router>
-              <AppContent />
-            </Router>
+            <AdminProvider>
+              <OnboardingProvider>
+                <Router>
+                  <AppContent />
+                </Router>
+              </OnboardingProvider>
+            </AdminProvider>
           </TradeInteractionProvider>
         </NotificationProvider>
       </AuthProvider>

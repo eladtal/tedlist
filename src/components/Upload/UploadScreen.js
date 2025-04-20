@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaCamera, FaTimes, FaArrowLeft, FaCheckCircle, FaUpload, FaTag, FaHandshake } from 'react-icons/fa';
 import theme from '../../styles/theme';
+import { useAuth } from '../../contexts/AuthContext';
+import { useOnboarding, ONBOARDING_STEPS } from '../../contexts/OnboardingContext';
 
 const Container = styled.div`
   padding: ${theme.spacing.md};
@@ -304,14 +306,16 @@ const initialErrors = {
 };
 
 const UploadScreen = () => {
+  const { currentUser } = useAuth();
+  const { completeStep } = useOnboarding();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [formState, setFormState] = useState(initialFormState);
   const [errors, setErrors] = useState(initialErrors);
   const [photos, setPhotos] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successSubmission, setSuccessSubmission] = useState(false);
   const fileInputRef = useRef(null);
-  const navigate = useNavigate();
-  const location = useLocation();
   
   // Set initial listing type based on navigation state if present
   useEffect(() => {
@@ -486,6 +490,9 @@ const UploadScreen = () => {
       
       // Save back to localStorage
       localStorage.setItem('tedlistUserItems', JSON.stringify(existingItems));
+      
+      // Complete the upload item onboarding step
+      completeStep(ONBOARDING_STEPS.UPLOAD_ITEM);
       
       // Show success message
       setSuccessSubmission(true);

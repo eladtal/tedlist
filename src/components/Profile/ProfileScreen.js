@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaCamera, FaPen, FaSignOutAlt } from 'react-icons/fa';
+import { FaCamera, FaPen, FaSignOutAlt, FaUserPlus, FaTrophy } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOnboarding, ONBOARDING_STEPS } from '../../contexts/OnboardingContext';
 import theme from '../../styles/theme';
+import InviteFriendModal from './InviteFriendModal';
 
 const Container = styled.div`
   padding-bottom: 80px;
@@ -271,12 +273,52 @@ const SaveButton = styled.button`
   }
 `;
 
+const ActionButtons = styled.div`
+  display: flex;
+  flex-direction: column;
+  margin-top: ${theme.spacing.md};
+  gap: ${theme.spacing.sm};
+`;
+
+const ActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: ${theme.spacing.sm} ${theme.spacing.md};
+  border-radius: ${theme.borderRadius.medium};
+  background-color: ${props => props.primary ? theme.colors.primary : 'white'};
+  color: ${props => props.primary ? 'white' : theme.colors.textSecondary};
+  border: ${props => props.primary ? 'none' : `1px solid ${theme.colors.divider}`};
+  font-weight: ${theme.typography.fontWeight.medium};
+  cursor: pointer;
+  
+  svg {
+    margin-right: ${theme.spacing.sm};
+  }
+  
+  &:hover {
+    background-color: ${props => props.primary ? theme.colors.primaryDark : theme.colors.greyLight};
+  }
+`;
+
+const OnboardingButton = styled(ActionButton)`
+  background-color: transparent;
+  border: 1px dashed ${theme.colors.primary};
+  color: ${theme.colors.primary};
+  
+  &:hover {
+    background-color: rgba(106, 90, 205, 0.05);
+  }
+`;
+
 const ProfileScreen = () => {
   const navigate = useNavigate();
   const { currentUser, logout, updateProfile } = useAuth();
+  const { completeStep, isStepCompleted, getProgressPercentage } = useOnboarding();
   const [activeTab, setActiveTab] = useState('listings');
   const [items, setItems] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [username, setUsername] = useState('');
   const [profileImage, setProfileImage] = useState('');
   const fileInputRef = React.useRef(null);
@@ -345,6 +387,14 @@ const ProfileScreen = () => {
       });
       
       setShowEditModal(false);
+      
+      // Check if this completes the profile step for onboarding
+      if (!isStepCompleted(ONBOARDING_STEPS.COMPLETE_PROFILE)) {
+        // Consider profile complete if username and image are provided
+        if (username && (profileImage || currentUser.profileImage)) {
+          completeStep(ONBOARDING_STEPS.COMPLETE_PROFILE);
+        }
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
     }
@@ -385,14 +435,20 @@ const ProfileScreen = () => {
         <ProfileName>{username}</ProfileName>
         <ProfileInfo>Member since {new Date(currentUser?.createdAt || Date.now()).toLocaleDateString()}</ProfileInfo>
         
-        <LogoutButton onClick={handleLogout}>
-          <FaSignOutAlt />
-          Log Out
-        </LogoutButton>
-        
-        <EditButton onClick={handleEditProfile}>
-          <FaPen />
-        </EditButton>
+        <ActionButtons>
+          <ActionButton primary onClick={() => setShowEditModal(true)}>
+            <FaPen /> Edit Profile
+          </ActionButton>
+          <ActionButton onClick={() => setShowInviteModal(true)}>
+            <FaUserPlus /> Invite Friends
+          </ActionButton>
+          <OnboardingButton onClick={() => navigate('/onboarding')}>
+            <FaTrophy /> Onboarding Progress: {getProgressPercentage()}%
+          </OnboardingButton>
+          <ActionButton onClick={handleLogout}>
+            <FaSignOutAlt /> Logout
+          </ActionButton>
+        </ActionButtons>
       </ProfileHeader>
       
       <Tabs>
@@ -466,6 +522,10 @@ const ProfileScreen = () => {
             </Form>
           </ModalContent>
         </EditProfileModal>
+      )}
+      
+      {showInviteModal && (
+        <InviteFriendModal onClose={() => setShowInviteModal(false)} />
       )}
     </Container>
   );

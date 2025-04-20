@@ -1,8 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaExchangeAlt, FaPlus, FaEnvelope, FaUser } from 'react-icons/fa';
+import { FaHome, FaExchangeAlt, FaPlus, FaEnvelope, FaUser, FaUserShield, FaBell } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAdmin } from '../../contexts/AdminContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import theme from '../../styles/theme';
 
 const NavContainer = styled.nav`
@@ -147,9 +149,32 @@ const ProfileAvatar = styled.div`
   }
 `;
 
+const NotificationBadge = styled.div`
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: ${theme.colors.error};
+  color: white;
+  font-size: 0.7rem;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const IconWrapper = styled.div`
+  position: relative;
+`;
+
 const Navbar = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
+  const { isAdmin } = useAdmin();
+  const { getUnreadCount } = useNotifications();
+  
+  const unreadNotifications = getUnreadCount ? getUnreadCount() : 0;
   
   return (
     <NavContainer>
@@ -171,6 +196,18 @@ const Navbar = () => {
           <AddButtonLabel>Post Item</AddButtonLabel>
         </AddButton>
         
+        <NavLink to="/notifications" active={location.pathname === '/notifications' ? 1 : 0}>
+          <NavIcon>
+            <IconWrapper>
+              <FaBell />
+              {unreadNotifications > 0 && (
+                <NotificationBadge>{unreadNotifications > 9 ? '9+' : unreadNotifications}</NotificationBadge>
+              )}
+            </IconWrapper>
+          </NavIcon>
+          <NavLabel>Notifications</NavLabel>
+        </NavLink>
+        
         <NavLink to="/messages" active={location.pathname === '/messages' ? 1 : 0}>
           <NavIcon><FaEnvelope /></NavIcon>
           <NavLabel>Messages</NavLabel>
@@ -187,6 +224,13 @@ const Navbar = () => {
           )}
           <NavLabel>Profile</NavLabel>
         </NavLink>
+        
+        {isAdmin && (
+          <NavLink to="/admin" active={location.pathname === '/admin' ? 1 : 0}>
+            <NavIcon><FaUserShield /></NavIcon>
+            <NavLabel>Admin</NavLabel>
+          </NavLink>
+        )}
       </NavInner>
     </NavContainer>
   );

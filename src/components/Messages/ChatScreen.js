@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaExchangeAlt, FaPaperPlane, FaHandshake, FaTimesCircle, FaInstagram, FaShareAlt } from 'react-icons/fa';
 import theme from '../../styles/theme';
+import { FaArrowLeft, FaExchangeAlt, FaPaperPlane, FaHandshake, FaTimesCircle, FaInstagram, FaShareAlt } from 'react-icons/fa';
+import { useAuth } from '../../contexts/AuthContext';
+import { useOnboarding, ONBOARDING_STEPS } from '../../contexts/OnboardingContext';
 
 const Container = styled.div`
   height: 100vh;
@@ -253,6 +255,8 @@ const TradeButton = styled.button`
 const ChatScreen = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const { completeStep } = useOnboarding();
   const [conversation, setConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -357,27 +361,13 @@ const ChatScreen = () => {
     setMessages(updatedMessages);
     
     // Save to localStorage
-    localStorage.setItem(`tedlistMessages_${id}`, JSON.stringify(updatedMessages));
-    
-    // Update last message in conversations list
-    const savedConversations = localStorage.getItem('tedlistConversations');
-    if (savedConversations) {
-      const conversations = JSON.parse(savedConversations);
-      const updatedConversations = conversations.map(conv => {
-        if (conv.id === id) {
-          return {
-            ...conv,
-            lastMessage: {
-              text: newMessage.trim(),
-              timestamp: Date.now(),
-              read: true
-            }
-          };
-        }
-        return conv;
-      });
+    try {
+      localStorage.setItem(`tedlistMessages_${id}`, JSON.stringify(updatedMessages));
       
-      localStorage.setItem('tedlistConversations', JSON.stringify(updatedConversations));
+      // Complete the send message onboarding step
+      completeStep(ONBOARDING_STEPS.SEND_MESSAGE);
+    } catch (error) {
+      console.error('Error saving message:', error);
     }
     
     // Clear input
