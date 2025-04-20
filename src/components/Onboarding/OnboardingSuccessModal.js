@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
-import Confetti from 'react-confetti';
-import { FaTrophy, FaTimes, FaCoins } from 'react-icons/fa';
+import { FaTrophy, FaTimes } from 'react-icons/fa';
 import theme from '../../styles/theme';
-import { useOnboarding, STEP_POINTS } from '../../contexts/OnboardingContext';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const fadeIn = keyframes`
   from {
@@ -14,18 +13,39 @@ const fadeIn = keyframes`
   }
 `;
 
-const slideUp = keyframes`
-  from {
-    transform: translateY(50px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
+const fallAnimation = keyframes`
+  0% {
+    transform: translateY(-50vh);
     opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
   }
 `;
 
-const Overlay = styled.div`
+const spin = keyframes`
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+`;
+
+const pulse = keyframes`
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+`;
+
+const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
   left: 0;
@@ -33,29 +53,22 @@ const Overlay = styled.div`
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.7);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   z-index: 1000;
-  animation: ${fadeIn} 0.3s ease;
+  animation: ${fadeIn} 0.3s ease-out;
 `;
 
-const ModalContainer = styled.div`
+const ModalContent = styled.div`
   background-color: white;
   border-radius: ${theme.borderRadius.large};
+  padding: ${theme.spacing.xl};
   width: 90%;
   max-width: 500px;
-  max-height: 90vh;
-  overflow: hidden;
-  box-shadow: ${theme.shadows.large};
-  animation: ${slideUp} 0.5s ease;
-`;
-
-const ModalHeader = styled.div`
-  background: linear-gradient(135deg, #6A5ACD, #8A2BE2);
-  color: white;
-  padding: ${theme.spacing.lg};
   text-align: center;
   position: relative;
+  z-index: 1001;
+  box-shadow: ${theme.shadows.large};
 `;
 
 const CloseButton = styled.button`
@@ -64,164 +77,131 @@ const CloseButton = styled.button`
   right: ${theme.spacing.md};
   background: none;
   border: none;
-  color: white;
-  font-size: 1.2rem;
-  cursor: pointer;
-  opacity: 0.8;
-  
-  &:hover {
-    opacity: 1;
-  }
-`;
-
-const ModalTitle = styled.h2`
-  margin: 0;
-  font-size: ${theme.typography.fontSize.xlarge};
-  margin-bottom: ${theme.spacing.sm};
-`;
-
-const ModalSubtitle = styled.p`
-  margin: 0;
-  opacity: 0.9;
-  font-size: ${theme.typography.fontSize.medium};
-`;
-
-const ModalBody = styled.div`
-  padding: ${theme.spacing.lg};
-  text-align: center;
-`;
-
-const TrophyIcon = styled.div`
-  color: gold;
-  font-size: 4rem;
-  margin-bottom: ${theme.spacing.md};
-`;
-
-const BadgeContainer = styled.div`
-  background-color: ${theme.colors.greyLight};
-  padding: ${theme.spacing.lg};
-  border-radius: ${theme.borderRadius.large};
-  display: inline-block;
-  margin: ${theme.spacing.md} 0;
-`;
-
-const BadgeTitle = styled.div`
-  font-weight: ${theme.typography.fontWeight.bold};
-  font-size: ${theme.typography.fontSize.large};
-  margin-bottom: ${theme.spacing.xs};
-`;
-
-const BadgeDescription = styled.div`
+  font-size: 1.5rem;
   color: ${theme.colors.textSecondary};
-  font-size: ${theme.typography.fontSize.medium};
-`;
-
-const BonusPoints = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: ${theme.spacing.lg} 0;
-  font-weight: ${theme.typography.fontWeight.bold};
-  font-size: ${theme.typography.fontSize.xlarge};
-  color: ${theme.colors.primary};
-`;
-
-const PointsIcon = styled.div`
-  color: gold;
-  margin-right: ${theme.spacing.sm};
-  display: flex;
-  align-items: center;
-`;
-
-const Button = styled.button`
-  background-color: ${theme.colors.primary};
-  color: white;
-  border: none;
-  padding: ${theme.spacing.md} ${theme.spacing.lg};
-  border-radius: ${theme.borderRadius.medium};
-  font-weight: ${theme.typography.fontWeight.bold};
-  font-size: ${theme.typography.fontSize.medium};
   cursor: pointer;
-  margin-top: ${theme.spacing.md};
   
   &:hover {
-    background-color: ${theme.colors.primaryDark};
+    color: ${theme.colors.textPrimary};
   }
 `;
 
-const OnboardingSuccessModal = () => {
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const { showCompletionModal, closeCompletionModal } = useOnboarding();
+const Title = styled.h2`
+  font-size: 1.8rem;
+  margin-bottom: ${theme.spacing.md};
+  color: ${theme.colors.textPrimary};
+`;
+
+const Message = styled.p`
+  font-size: 1.2rem;
+  margin-bottom: ${theme.spacing.xl};
+  color: ${theme.colors.textSecondary};
+`;
+
+const IconContainer = styled.div`
+  margin-bottom: ${theme.spacing.md};
+  font-size: 4rem;
+  color: #FFD700;
+  animation: ${pulse} 2s infinite;
+`;
+
+const PointsHighlight = styled.span`
+  font-weight: ${theme.typography.fontWeight.bold};
+  color: ${theme.colors.primary};
+  font-size: 1.4rem;
+`;
+
+const ConfettiContainer = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1000;
+  pointer-events: none;
+`;
+
+const Confetti = styled.div`
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: ${props => props.color};
+  opacity: 0.8;
+  border-radius: ${props => props.round ? '50%' : '0'};
+  animation: ${fallAnimation} ${props => props.duration}s linear infinite;
+  animation-delay: ${props => props.delay}s;
+  top: -10px;
+  left: ${props => props.left}%;
+  transform: rotate(${props => props.rotate}deg);
+`;
+
+const createConfetti = (count = 50) => {
+  const colors = ['#6A5ACD', '#FF6347', '#FFD700', '#3CB371', '#FF1493', '#00BFFF'];
+  const confetti = [];
   
-  // Set dimensions for the confetti
+  for (let i = 0; i < count; i++) {
+    const left = Math.random() * 100;
+    const duration = Math.random() * 5 + 3;
+    const delay = Math.random() * 3;
+    const rotate = Math.random() * 360;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const round = Math.random() > 0.5;
+    
+    confetti.push(
+      <Confetti 
+        key={i}
+        left={left}
+        duration={duration}
+        delay={delay}
+        rotate={rotate}
+        color={color}
+        round={round}
+      />
+    );
+  }
+  
+  return confetti;
+};
+
+const OnboardingSuccessModal = ({ onClose }) => {
+  const { getTotalPointsEarned } = useOnboarding();
+  const totalPoints = getTotalPointsEarned();
+  
   useEffect(() => {
-    const updateDimensions = () => {
-      setDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
+    // Prevent scrolling when modal is open
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      document.body.style.overflow = 'auto';
     };
-    
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    
-    return () => window.removeEventListener('resize', updateDimensions);
   }, []);
   
-  if (!showCompletionModal) {
-    return null;
-  }
-  
   return (
-    <Overlay>
-      <Confetti
-        width={dimensions.width}
-        height={dimensions.height}
-        numberOfPieces={200}
-        recycle={false}
-        colors={['#6A5ACD', '#8A2BE2', '#FF6347', '#FFD700', '#4CAF50', '#2196F3']}
-      />
+    <ModalOverlay>
+      <ConfettiContainer>
+        {createConfetti(100)}
+      </ConfettiContainer>
       
-      <ModalContainer>
-        <ModalHeader>
-          <CloseButton onClick={closeCompletionModal}>
-            <FaTimes />
-          </CloseButton>
-          <ModalTitle>🎉 Congratulations!</ModalTitle>
-          <ModalSubtitle>You've completed your Tedlist Starter Pack!</ModalSubtitle>
-        </ModalHeader>
+      <ModalContent>
+        <CloseButton onClick={onClose}>
+          <FaTimes />
+        </CloseButton>
         
-        <ModalBody>
-          <TrophyIcon>
-            <FaTrophy />
-          </TrophyIcon>
-          
-          <p>
-            You've completed all the onboarding tasks and unlocked a special reward!
-          </p>
-          
-          <BadgeContainer>
-            <BadgeTitle>Starter Pack Complete!</BadgeTitle>
-            <BadgeDescription>You're now a verified Tedlist user</BadgeDescription>
-          </BadgeContainer>
-          
-          <BonusPoints>
-            <PointsIcon>
-              <FaCoins />
-            </PointsIcon>
-            +{STEP_POINTS.COMPLETION_BONUS} BONUS POINTS
-          </BonusPoints>
-          
-          <p>
-            Keep exploring Tedlist to earn more points and unlock additional rewards!
-          </p>
-          
-          <Button onClick={closeCompletionModal}>
-            Continue to Tedlist
-          </Button>
-        </ModalBody>
-      </ModalContainer>
-    </Overlay>
+        <IconContainer>
+          <FaTrophy />
+        </IconContainer>
+        
+        <Title>Congratulations!</Title>
+        <Message>
+          You've completed all onboarding tasks and earned a total of
+          <PointsHighlight> {totalPoints} points</PointsHighlight>!
+        </Message>
+        <Message>
+          Great job exploring Tedlist! Continue using the platform to earn more points and unlock special rewards.
+        </Message>
+      </ModalContent>
+    </ModalOverlay>
   );
 };
 
