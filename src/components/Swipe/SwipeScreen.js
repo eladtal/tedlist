@@ -270,7 +270,7 @@ const SwipeScreen = () => {
   const { currentUser } = useAuth();
   const { createTradeOffer } = useTradeInteraction();
   const { addTradeOfferNotification } = useNotifications();
-  const { trackItemSwipe } = useOnboarding();
+  const { trackSwipe } = useOnboarding();
   
   const [items, setItems] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -498,8 +498,8 @@ const SwipeScreen = () => {
     // Record the swipe
     recordSwipe(currentItem.id, direction);
     
-    // Track the swipe for onboarding progress
-    trackItemSwipe();
+    // Track the swipe for onboarding
+    trackSwipe();
     
     // Reset and move to next card
     setTimeout(() => {

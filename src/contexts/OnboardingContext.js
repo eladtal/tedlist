@@ -1,10 +1,10 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { usePoints } from './PointsContext';
 
-// Define the onboarding steps
+// Onboarding step definitions
 export const ONBOARDING_STEPS = {
-  SIGNED_UP: 'signed_up',
+  SIGN_UP: 'sign_up',
   UPLOAD_ITEM: 'upload_item',
   COMPLETE_PROFILE: 'complete_profile',
   SEND_MESSAGE: 'send_message',
@@ -12,26 +12,81 @@ export const ONBOARDING_STEPS = {
   INVITE_FRIEND: 'invite_friend'
 };
 
-// Point values for each step
+// Points awarded for each step
 export const STEP_POINTS = {
-  [ONBOARDING_STEPS.SIGNED_UP]: 200,
-  [ONBOARDING_STEPS.UPLOAD_ITEM]: 300,
-  [ONBOARDING_STEPS.COMPLETE_PROFILE]: 250,
-  [ONBOARDING_STEPS.SEND_MESSAGE]: 150,
-  [ONBOARDING_STEPS.SWIPE_ITEMS]: 200,
-  [ONBOARDING_STEPS.INVITE_FRIEND]: 500,
+  SIGN_UP: 200,
+  UPLOAD_ITEM: 300,
+  COMPLETE_PROFILE: 250,
+  SEND_MESSAGE: 150,
+  SWIPE_ITEMS: 200,
+  INVITE_FRIEND: 500,
   COMPLETION_BONUS: 1000
 };
 
-// Number of items to swipe to complete that step
-export const SWIPE_THRESHOLD = 5;
+export const ONBOARDING_STEP_DETAILS = {
+  [ONBOARDING_STEPS.SIGN_UP]: {
+    title: 'Create an account',
+    description: 'Sign up to start your Tedlist journey',
+    points: STEP_POINTS.SIGN_UP,
+    icon: 'FaUserPlus',
+    ctaText: 'Sign Up',
+    ctaPath: '/signup'
+  },
+  [ONBOARDING_STEPS.UPLOAD_ITEM]: {
+    title: 'Upload your first item',
+    description: 'Share something you want to sell or trade',
+    points: STEP_POINTS.UPLOAD_ITEM,
+    icon: 'FaUpload',
+    ctaText: 'Upload Item',
+    ctaPath: '/upload'
+  },
+  [ONBOARDING_STEPS.COMPLETE_PROFILE]: {
+    title: 'Complete your profile',
+    description: 'Add your information to build trust with other users',
+    points: STEP_POINTS.COMPLETE_PROFILE,
+    icon: 'FaUser',
+    ctaText: 'Edit Profile',
+    ctaPath: '/profile'
+  },
+  [ONBOARDING_STEPS.SEND_MESSAGE]: {
+    title: 'Send your first message',
+    description: 'Start a conversation with another user',
+    points: STEP_POINTS.SEND_MESSAGE,
+    icon: 'FaComments',
+    ctaText: 'Messages',
+    ctaPath: '/messages'
+  },
+  [ONBOARDING_STEPS.SWIPE_ITEMS]: {
+    title: 'Swipe on 5 items',
+    description: 'Discover items by swiping through the marketplace',
+    points: STEP_POINTS.SWIPE_ITEMS,
+    icon: 'FaExchangeAlt',
+    ctaText: 'Discover Items',
+    ctaPath: '/swipe'
+  },
+  [ONBOARDING_STEPS.INVITE_FRIEND]: {
+    title: 'Invite a friend',
+    description: 'Grow your community by inviting friends',
+    points: STEP_POINTS.INVITE_FRIEND,
+    icon: 'FaUserFriends',
+    ctaText: 'Invite Friends',
+    ctaPath: '/profile'
+  }
+};
 
-// Create the onboarding context
-export const OnboardingContext = createContext();
+// Create the context
+const OnboardingContext = createContext();
 
-// Custom hook to use the onboarding context
-export const useOnboarding = () => {
-  return useContext(OnboardingContext);
+// Check if localStorage is available
+const isLocalStorageAvailable = () => {
+  try {
+    const testKey = 'test';
+    localStorage.setItem(testKey, testKey);
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    return false;
+  }
 };
 
 // Provider component
@@ -39,250 +94,176 @@ export const OnboardingProvider = ({ children }) => {
   const { currentUser } = useAuth();
   const { awardPoints } = usePoints();
   const [completedSteps, setCompletedSteps] = useState({});
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [swipeCount, setSwipeCount] = useState(0);
-
-  // Load onboarding progress when user logs in
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const localStorageAvailable = isLocalStorageAvailable();
+  
+  // Load saved onboarding progress
   useEffect(() => {
-    if (currentUser) {
-      loadOnboardingProgress();
-    } else {
-      setCompletedSteps({});
-      setLoading(false);
-    }
-  }, [currentUser]);
-
-  // Check if all steps are completed and show the completion modal if needed
-  useEffect(() => {
-    if (!loading && isOnboardingComplete() && !completedSteps.all_completed) {
-      setShowCompletionModal(true);
-      
-      // Mark all steps as completed and award bonus points
-      if (!completedSteps.all_completed) {
-        completeAllSteps();
-      }
-    }
-  }, [completedSteps, loading]);
-
-  // Load onboarding progress from localStorage
-  const loadOnboardingProgress = () => {
+    if (!currentUser || !localStorageAvailable) return;
+    
     try {
-      setLoading(true);
-      const savedProgress = localStorage.getItem(`tedlistOnboarding_${currentUser.id}`);
+      const savedProgress = localStorage.getItem(`tedlist_onboarding_${currentUser.id}`);
       
       if (savedProgress) {
-        const progress = JSON.parse(savedProgress);
-        setCompletedSteps(progress);
-        
-        // Load swipe count if it exists
-        if (progress.swipe_count) {
-          setSwipeCount(progress.swipe_count);
-        }
+        const parsedProgress = JSON.parse(savedProgress);
+        setCompletedSteps(parsedProgress.completedSteps || {});
+        setSwipeCount(parsedProgress.swipeCount || 0);
       } else {
-        // If no saved progress, at least mark the signed up step as completed
-        const initialProgress = {
-          [ONBOARDING_STEPS.SIGNED_UP]: true
-        };
-        setCompletedSteps(initialProgress);
-        saveOnboardingProgress(initialProgress);
-        
-        // Award points for signing up
-        awardPoints(STEP_POINTS[ONBOARDING_STEPS.SIGNED_UP], 'Signed up to Tedlist');
+        // If no saved progress, mark sign up as complete automatically
+        completeStep(ONBOARDING_STEPS.SIGN_UP);
       }
     } catch (error) {
       console.error('Error loading onboarding progress:', error);
-    } finally {
-      setLoading(false);
+      // Initialize with empty state
+      setCompletedSteps({});
+      setSwipeCount(0);
     }
-  };
-
-  // Save onboarding progress to localStorage
-  const saveOnboardingProgress = (progress) => {
+  }, [currentUser]);
+  
+  // Save progress whenever it changes
+  useEffect(() => {
+    if (!currentUser || !localStorageAvailable) return;
+    
     try {
-      localStorage.setItem(`tedlistOnboarding_${currentUser.id}`, JSON.stringify(progress));
+      localStorage.setItem(
+        `tedlist_onboarding_${currentUser.id}`,
+        JSON.stringify({
+          completedSteps,
+          swipeCount
+        })
+      );
+      
+      // Check if all steps are completed
+      const allStepsCompleted = Object.values(ONBOARDING_STEPS).every(
+        step => completedSteps[step]
+      );
+      
+      if (allStepsCompleted && !completedSteps.bonusAwarded) {
+        // Award completion bonus
+        awardPoints(STEP_POINTS.COMPLETION_BONUS, 'Completed all onboarding steps');
+        setCompletedSteps(prev => ({
+          ...prev,
+          bonusAwarded: true
+        }));
+        setShowCompletionModal(true);
+      }
     } catch (error) {
       console.error('Error saving onboarding progress:', error);
     }
-  };
-
-  // Complete a specific step
+  }, [completedSteps, swipeCount, currentUser]);
+  
+  // Mark a step as completed
   const completeStep = (step) => {
-    if (completedSteps[step]) return false; // Step already completed
+    if (!currentUser) return;
     
-    const newCompletedSteps = {
-      ...completedSteps,
+    // Check if step is already completed
+    if (completedSteps[step]) return;
+    
+    // Mark step as completed
+    setCompletedSteps(prev => ({
+      ...prev,
       [step]: true
-    };
+    }));
     
-    // Special case for swipe items
-    if (step === ONBOARDING_STEPS.SWIPE_ITEMS) {
-      newCompletedSteps.swipe_count = SWIPE_THRESHOLD;
+    // Award points for completing the step
+    if (STEP_POINTS[step]) {
+      const stepTitle = ONBOARDING_STEP_DETAILS[step]?.title || step;
+      awardPoints(STEP_POINTS[step], `Completed onboarding step: ${stepTitle}`);
     }
-    
-    setCompletedSteps(newCompletedSteps);
-    saveOnboardingProgress(newCompletedSteps);
-    
-    // Award points for completing this step
-    awardPoints(STEP_POINTS[step], `Completed onboarding step: ${getStepTitle(step)}`);
-    
-    return true;
   };
-
-  // Mark all steps as completed and award bonus
-  const completeAllSteps = () => {
-    const newCompletedSteps = {
-      ...completedSteps,
-      [ONBOARDING_STEPS.SIGNED_UP]: true,
-      [ONBOARDING_STEPS.UPLOAD_ITEM]: true,
-      [ONBOARDING_STEPS.COMPLETE_PROFILE]: true,
-      [ONBOARDING_STEPS.SEND_MESSAGE]: true,
-      [ONBOARDING_STEPS.SWIPE_ITEMS]: true,
-      [ONBOARDING_STEPS.INVITE_FRIEND]: true,
-      all_completed: true
-    };
+  
+  // Track swipe count for the swipe items step
+  const trackSwipe = () => {
+    if (!currentUser) return;
     
-    setCompletedSteps(newCompletedSteps);
-    saveOnboardingProgress(newCompletedSteps);
+    const newSwipeCount = swipeCount + 1;
+    setSwipeCount(newSwipeCount);
     
-    // Award bonus points
-    awardPoints(STEP_POINTS.COMPLETION_BONUS, 'Completed Tedlist Starter Pack! 🎉');
-  };
-
-  // Track item swipes
-  const trackItemSwipe = () => {
-    if (completedSteps[ONBOARDING_STEPS.SWIPE_ITEMS]) {
-      return false; // Already completed swipe step
+    // Check if user has swiped enough for the step
+    if (newSwipeCount >= 5 && !completedSteps[ONBOARDING_STEPS.SWIPE_ITEMS]) {
+      completeStep(ONBOARDING_STEPS.SWIPE_ITEMS);
     }
-    
-    const newCount = swipeCount + 1;
-    setSwipeCount(newCount);
-    
-    const newCompletedSteps = {
-      ...completedSteps,
-      swipe_count: newCount
-    };
-    
-    // If we've reached the threshold, complete the step
-    if (newCount >= SWIPE_THRESHOLD) {
-      newCompletedSteps[ONBOARDING_STEPS.SWIPE_ITEMS] = true;
-      awardPoints(STEP_POINTS[ONBOARDING_STEPS.SWIPE_ITEMS], `Swiped ${SWIPE_THRESHOLD} items`);
-    }
-    
-    setCompletedSteps(newCompletedSteps);
-    saveOnboardingProgress(newCompletedSteps);
-    
-    return newCount >= SWIPE_THRESHOLD;
   };
-
-  // Reset the completion modal
-  const closeCompletionModal = () => {
-    setShowCompletionModal(false);
-  };
-
+  
   // Check if a step is completed
   const isStepCompleted = (step) => {
     return !!completedSteps[step];
   };
-
-  // Check if all onboarding steps are completed
-  const isOnboardingComplete = () => {
-    return Object.values(ONBOARDING_STEPS).every(step => isStepCompleted(step));
-  };
-
-  // Get the progress percentage
+  
+  // Calculate the percentage of completed steps
   const getProgressPercentage = () => {
+    if (!currentUser) return 0;
+    
     const totalSteps = Object.keys(ONBOARDING_STEPS).length;
-    const completedCount = Object.values(ONBOARDING_STEPS).filter(step => isStepCompleted(step)).length;
+    const completedCount = Object.values(ONBOARDING_STEPS).filter(
+      step => completedSteps[step]
+    ).length;
+    
     return Math.round((completedCount / totalSteps) * 100);
   };
-
-  // Get the title for a step
-  const getStepTitle = (step) => {
-    switch (step) {
-      case ONBOARDING_STEPS.SIGNED_UP:
-        return 'Signed up';
-      case ONBOARDING_STEPS.UPLOAD_ITEM:
-        return 'Upload your first item';
-      case ONBOARDING_STEPS.COMPLETE_PROFILE:
-        return 'Complete your profile';
-      case ONBOARDING_STEPS.SEND_MESSAGE:
-        return 'Send your first message';
-      case ONBOARDING_STEPS.SWIPE_ITEMS:
-        return `Swipe ${SWIPE_THRESHOLD} items`;
-      case ONBOARDING_STEPS.INVITE_FRIEND:
-        return 'Invite 1 friend';
-      default:
-        return 'Unknown step';
+  
+  // Get total points that have been earned through onboarding
+  const getTotalPointsEarned = () => {
+    if (!currentUser) return 0;
+    
+    let total = 0;
+    
+    // Add up points from completed steps
+    Object.values(ONBOARDING_STEPS).forEach(step => {
+      if (completedSteps[step]) {
+        total += STEP_POINTS[step] || 0;
+      }
+    });
+    
+    // Add completion bonus if awarded
+    if (completedSteps.bonusAwarded) {
+      total += STEP_POINTS.COMPLETION_BONUS;
     }
+    
+    return total;
   };
-
-  // Get the CTA text for a step
-  const getStepCta = (step) => {
-    switch (step) {
-      case ONBOARDING_STEPS.UPLOAD_ITEM:
-        return 'Post an item';
-      case ONBOARDING_STEPS.COMPLETE_PROFILE:
-        return 'Edit profile';
-      case ONBOARDING_STEPS.SEND_MESSAGE:
-        return 'Go to chat';
-      case ONBOARDING_STEPS.SWIPE_ITEMS:
-        return 'Start swiping';
-      case ONBOARDING_STEPS.INVITE_FRIEND:
-        return 'Share invite link';
-      default:
-        return 'Complete';
-    }
+  
+  // Close the completion modal
+  const closeCompletionModal = () => {
+    setShowCompletionModal(false);
   };
-
-  // Get the navigation path for a CTA
-  const getStepCtaPath = (step) => {
-    switch (step) {
-      case ONBOARDING_STEPS.UPLOAD_ITEM:
-        return '/upload';
-      case ONBOARDING_STEPS.COMPLETE_PROFILE:
-        return '/profile';
-      case ONBOARDING_STEPS.SEND_MESSAGE:
-        return '/messages';
-      case ONBOARDING_STEPS.SWIPE_ITEMS:
-        return '/swipe';
-      case ONBOARDING_STEPS.INVITE_FRIEND:
-        return '/profile'; // Add invite flow in profile
-      default:
-        return '/';
-    }
-  };
-
-  // Get swipe count progress
-  const getSwipeProgress = () => {
-    return {
-      current: swipeCount,
-      target: SWIPE_THRESHOLD,
-      completed: isStepCompleted(ONBOARDING_STEPS.SWIPE_ITEMS)
-    };
-  };
-
-  // Value object for the context provider
-  const value = {
-    completedSteps,
-    showCompletionModal,
-    completeStep,
-    closeCompletionModal,
-    isStepCompleted,
-    isOnboardingComplete,
-    getProgressPercentage,
-    getStepTitle,
-    getStepCta,
-    getStepCtaPath,
-    trackItemSwipe,
-    getSwipeProgress,
-    ONBOARDING_STEPS,
-    STEP_POINTS
-  };
-
+  
   return (
-    <OnboardingContext.Provider value={value}>
-      {!loading && children}
+    <OnboardingContext.Provider
+      value={{
+        completedSteps,
+        completeStep,
+        isStepCompleted,
+        getProgressPercentage,
+        swipeCount,
+        trackSwipe,
+        showCompletionModal,
+        closeCompletionModal,
+        getTotalPointsEarned
+      }}
+    >
+      {children}
     </OnboardingContext.Provider>
   );
+};
+
+// Custom hook to use the onboarding context
+export const useOnboarding = () => {
+  const context = useContext(OnboardingContext);
+  if (!context) {
+    console.error('useOnboarding must be used within an OnboardingProvider');
+    return {
+      completedSteps: {},
+      completeStep: () => {},
+      isStepCompleted: () => false,
+      getProgressPercentage: () => 0,
+      swipeCount: 0,
+      trackSwipe: () => {},
+      showCompletionModal: false,
+      closeCompletionModal: () => {},
+      getTotalPointsEarned: () => 0
+    };
+  }
+  return context;
 };
