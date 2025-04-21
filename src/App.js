@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import styled from 'styled-components';
@@ -30,12 +30,105 @@ import { AdminProvider } from './contexts/AdminContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import { PointsProvider } from './contexts/PointsContext';
 
+// Add a loading timeout for safety
+const LoadingTimeout = ({ children }) => {
+  const [showTimeout, setShowTimeout] = useState(false);
+  
+  useEffect(() => {
+    // Safety timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.warn('Application render timeout triggered');
+      setShowTimeout(true);
+    }, 10000); // 10 seconds
+    
+    return () => clearTimeout(timeout);
+  }, []);
+  
+  if (showTimeout) {
+    return (
+      <div style={{ 
+        padding: '20px',
+        maxWidth: '500px',
+        margin: '100px auto',
+        backgroundColor: '#fff3cd',
+        border: '1px solid #ffeeba',
+        borderRadius: '4px',
+        textAlign: 'center'
+      }}>
+        <h2 style={{ color: '#856404' }}>Loading Timeout</h2>
+        <p>The application is taking too long to load. This could be due to network issues or an application error.</p>
+        <div style={{ margin: '20px 0' }}>
+          <a href="/react-app.html" style={{ 
+            display: 'inline-block',
+            padding: '10px 15px',
+            backgroundColor: '#6A5ACD',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '4px',
+            marginRight: '15px'
+          }}>
+            Use Simple Version
+          </a>
+          <button onClick={() => window.location.reload()} style={{ 
+            padding: '10px 15px',
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}>
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  return children;
+};
+
 // Private Route component to protect authenticated routes
 const PrivateRoute = ({ children }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, loading } = useAuth();
   const location = useLocation();
   
-  if (!currentUser) {
+  // Add a safeguard against endless loading
+  const [forceAuth, setForceAuth] = useState(false);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (loading) {
+        console.warn('Auth still loading after timeout, forcing decision');
+        setForceAuth(true);
+      }
+    }, 5000); // 5 second safety net
+    
+    return () => clearTimeout(timer);
+  }, [loading]);
+  
+  // If still loading and not past timeout, show loading
+  if (loading && !forceAuth) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column'
+      }}>
+        <div style={{ marginBottom: '15px' }}>Loading authentication...</div>
+        <div style={{ width: '40px', height: '40px', border: '4px solid rgba(0,0,0,0.1)', borderRadius: '50%', borderLeftColor: '#6A5ACD', animation: 'spin 1s linear infinite' }}></div>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+  
+  if (!currentUser && !forceAuth) {
     // Redirect to login if not authenticated
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -218,29 +311,76 @@ const AppContainer = styled.div`
   }
 `;
 
-function App() {
+const App = () => {
+  const [appReady, setAppReady] = useState(false);
+  
+  // Add a safety timeout to ensure the app loads eventually
+  useEffect(() => {
+    // Mark app as ready after a short delay
+    const timer = setTimeout(() => {
+      setAppReady(true);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
   return (
-    <ThemeProvider theme={theme}>
-      <GlobalStyles />
-      <AuthProvider>
-        <NotificationProvider>
-          <TradeInteractionProvider>
-            <AdminProvider>
-              <PointsProvider>
-                <OnboardingProvider>
-                  <Router>
-                    <ErrorBoundary>
-                      <AppContent />
-                    </ErrorBoundary>
-                  </Router>
-                </OnboardingProvider>
-              </PointsProvider>
-            </AdminProvider>
-          </TradeInteractionProvider>
-        </NotificationProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <AppContainer>
+      <ThemeProvider theme={theme}>
+        <GlobalStyles />
+        <ErrorBoundary>
+          <LoadingTimeout>
+            <AuthProvider>
+              <NotificationProvider>
+                <AdminProvider>
+                  <TradeInteractionProvider>
+                    <PointsProvider>
+                      <OnboardingProvider>
+                        <Router>
+                          {appReady ? (
+                            <ErrorBoundary>
+                              <AppContent />
+                            </ErrorBoundary>
+                          ) : (
+                            <div style={{ 
+                              display: 'flex', 
+                              justifyContent: 'center', 
+                              alignItems: 'center', 
+                              height: '100vh' 
+                            }}>
+                              <div style={{ textAlign: 'center' }}>
+                                <div style={{ 
+                                  width: '50px', 
+                                  height: '50px', 
+                                  border: '5px solid #f3f3f3',
+                                  borderTop: '5px solid #6A5ACD',
+                                  borderRadius: '50%',
+                                  margin: '0 auto 20px',
+                                  animation: 'spin 1s linear infinite'
+                                }}></div>
+                                <h2>Loading Tedlist Marketplace</h2>
+                                <p>Please wait while we prepare your experience...</p>
+                                <style>{`
+                                  @keyframes spin {
+                                    0% { transform: rotate(0deg); }
+                                    100% { transform: rotate(360deg); }
+                                  }
+                                `}</style>
+                              </div>
+                            </div>
+                          )}
+                        </Router>
+                      </OnboardingProvider>
+                    </PointsProvider>
+                  </TradeInteractionProvider>
+                </AdminProvider>
+              </NotificationProvider>
+            </AuthProvider>
+          </LoadingTimeout>
+        </ErrorBoundary>
+      </ThemeProvider>
+    </AppContainer>
   );
-}
+};
 
 export default App;

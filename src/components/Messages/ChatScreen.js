@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { format } from 'date-fns';
 import theme from '../../styles/theme';
 import { FaArrowLeft, FaExchangeAlt, FaPaperPlane, FaHandshake, FaTimesCircle, FaInstagram, FaShareAlt } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOnboarding, ONBOARDING_STEPS } from '../../contexts/OnboardingContext';
+import { 
+  getMessagesByConversation, 
+  sendMessage, 
+  markConversationAsRead 
+} from '../../services/message.service';
 
 const Container = styled.div`
   height: 100vh;
@@ -261,117 +267,215 @@ const ChatScreen = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef(null);
   
+  // Poll for new messages every 10 seconds
   useEffect(() => {
-    const loadConversation = () => {
-      try {
-        setLoading(true);
-        const savedConversations = localStorage.getItem('tedlistConversations');
-        
-        if (savedConversations) {
-          const conversations = JSON.parse(savedConversations);
-          const convo = conversations.find(c => c.id === id);
-          
-          if (convo) {
-            setConversation(convo);
-            
-            // Load messages for this conversation
-            const savedMessages = localStorage.getItem(`tedlistMessages_${id}`);
-            let messageData = [];
-            
-            if (savedMessages) {
-              messageData = JSON.parse(savedMessages);
-            } else {
-              // Generate sample messages if none exist
-              const now = Date.now();
-              
-              messageData = [
-                {
-                  id: 'm1',
-                  senderId: convo.user.id,
-                  text: convo.trade.theirItem 
-                    ? `Hi! I'm interested in trading my ${convo.trade.theirItem.title} for your ${convo.trade.userItem.title}.`
-                    : `Hi! I'm interested in your ${convo.trade.userItem.title}. Is it still available for trade?`,
-                  timestamp: now - 1000 * 60 * 60, // 1 hour ago
-                  type: 'message'
-                },
-                {
-                  id: 'm2',
-                  senderId: 'me',
-                  text: `Hi there! Yes, it's still available for trade.`,
-                  timestamp: now - 1000 * 60 * 55, // 55 minutes ago
-                  type: 'message'
-                },
-                {
-                  id: 'm3',
-                  senderId: 'system',
-                  text: 'A trade has been proposed. You can accept or decline this trade.',
-                  timestamp: now - 1000 * 60 * 55, // 55 minutes ago
-                  type: 'system'
-                },
-                {
-                  id: 'm4',
-                  senderId: convo.user.id,
-                  text: convo.trade.theirItem 
-                    ? `Great! Would you like to meet up to exchange the items?`
-                    : `Would you be interested in selling it instead of trading?`,
-                  timestamp: now - 1000 * 60 * 45, // 45 minutes ago
-                  type: 'message'
-                }
-              ];
-              
-              localStorage.setItem(`tedlistMessages_${id}`, JSON.stringify(messageData));
-            }
-            
-            setMessages(messageData);
-          } else {
-            // Handle conversation not found
-            console.error('Conversation not found');
-            navigate('/messages');
-          }
-        }
-      } catch (e) {
-        console.error('Error loading conversation:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
+    let intervalId;
     
-    loadConversation();
-  }, [id, navigate]);
+    if (id && !loading) {
+      intervalId = setInterval(() => {
+        fetchMessages(false); // Don't show loading indicator for polling
+      }, 10000);
+    }
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [id, loading]);
+  
+  const fetchMessages = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    
+    try {
+      // Try to get messages from the API
+      const response = await getMessagesByConversation(id);
+      
+      if (response.success && response.data) {
+        const { conversation: convo, messages: messageData } = response.data;
+        setConversation(convo);
+        setMessages(messageData);
+        
+        // Mark conversation as read
+        try {
+          await markConversationAsRead(id);
+        } catch (markError) {
+          console.error('Error marking conversation as read:', markError);
+        }
+        
+        return; // API call succeeded, we're done
+      }
+    } catch (apiError) {
+      console.warn('API request failed, falling back to localStorage:', apiError);
+      // If API call fails, we'll fall back to localStorage below
+    }
+    
+    // Fallback to localStorage if API call failed
+    try {
+      const savedConversations = localStorage.getItem('tedlistConversations');
+      
+      if (savedConversations) {
+        const conversations = JSON.parse(savedConversations);
+        const convo = conversations.find(c => c.id === id);
+        
+        if (convo) {
+          setConversation(convo);
+          
+          // Load messages for this conversation
+          const savedMessages = localStorage.getItem(`tedlistMessages_${id}`);
+          let messageData = [];
+          
+          if (savedMessages) {
+            messageData = JSON.parse(savedMessages);
+          } else {
+            // Generate sample messages if none exist
+            const now = Date.now();
+            
+            messageData = [
+              {
+                id: 'm1',
+                senderId: convo.otherUser?.id || convo.user?.id,
+                text: convo.item 
+                  ? `Hi! I'm interested in your ${convo.item.name}. Is it still available?`
+                  : 'Hi! How are you?',
+                timestamp: now - 1000 * 60 * 60, // 1 hour ago
+                type: 'message'
+              },
+              {
+                id: 'm2',
+                senderId: currentUser?.id || 'me',
+                text: `Hi there! Yes, it's still available.`,
+                timestamp: now - 1000 * 60 * 55, // 55 minutes ago
+                type: 'message'
+              },
+              {
+                id: 'm3',
+                senderId: convo.otherUser?.id || convo.user?.id,
+                text: `Great! Would you be open to negotiating the price?`,
+                timestamp: now - 1000 * 60 * 45, // 45 minutes ago
+                type: 'message'
+              }
+            ];
+            
+            localStorage.setItem(`tedlistMessages_${id}`, JSON.stringify(messageData));
+          }
+          
+          setMessages(messageData);
+        } else {
+          // Handle conversation not found
+          console.error('Conversation not found');
+          setError('This conversation could not be found');
+        }
+      } else {
+        setError('No conversation history found');
+      }
+    } catch (e) {
+      console.error('Error loading conversation from localStorage:', e);
+      setError('Error loading conversation data. Please try again.');
+    }
+    
+    if (showLoading) setLoading(false);
+  };
+  
+  useEffect(() => {
+    if (id) {
+      fetchMessages();
+    }
+  }, [id]);
   
   useEffect(() => {
     // Scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || sendingMessage) return;
     
-    const newMsg = {
-      id: `m${Date.now()}`,
-      senderId: 'me',
-      text: newMessage.trim(),
-      timestamp: Date.now(),
-      type: 'message'
+    const messageText = newMessage.trim();
+    setNewMessage('');
+    setSendingMessage(true);
+    
+    // Optimistically add message to UI
+    const optimisticMessage = {
+      id: `temp-${Date.now()}`,
+      senderId: currentUser?.id || 'me',
+      text: messageText,
+      timestamp: new Date().toISOString(),
+      type: 'message',
+      pending: true
     };
     
-    const updatedMessages = [...messages, newMsg];
-    setMessages(updatedMessages);
+    setMessages(prev => [...prev, optimisticMessage]);
     
-    // Save to localStorage
     try {
-      localStorage.setItem(`tedlistMessages_${id}`, JSON.stringify(updatedMessages));
+      // Try to send message via API
+      const messageData = {
+        conversationId: id,
+        content: messageText,
+        recipientId: conversation?.otherUser?.id || conversation?.user?.id
+      };
       
-      // Complete the send message onboarding step
-      completeStep(ONBOARDING_STEPS.SEND_MESSAGE);
-    } catch (error) {
-      console.error('Error saving message:', error);
+      if (conversation?.item) {
+        messageData.itemId = conversation.item.id;
+      }
+      
+      const response = await sendMessage(messageData);
+      
+      if (response.success && response.data) {
+        // Replace optimistic message with real one from API
+        setMessages(prev => prev.map(msg => 
+          msg.id === optimisticMessage.id ? response.data : msg
+        ));
+      } else {
+        throw new Error('Failed to send message via API');
+      }
+    } catch (apiError) {
+      console.warn('API request failed, falling back to localStorage:', apiError);
+      
+      // Fallback to localStorage
+      try {
+        const newMsg = {
+          id: `local-${Date.now()}`,
+          senderId: currentUser?.id || 'me',
+          text: messageText,
+          timestamp: new Date().toISOString(),
+          type: 'message'
+        };
+        
+        // Replace the optimistic message
+        setMessages(prev => prev.map(msg => 
+          msg.id === optimisticMessage.id ? newMsg : msg
+        ));
+        
+        // Save to localStorage
+        const updatedMessages = messages
+          .filter(m => m.id !== optimisticMessage.id) // Remove the temporary message
+          .concat([newMsg]); // Add the new message
+        
+        localStorage.setItem(`tedlistMessages_${id}`, JSON.stringify(updatedMessages));
+        
+        // Complete onboarding step if applicable
+        completeStep(ONBOARDING_STEPS.FIRST_MESSAGE);
+      } catch (localError) {
+        console.error('Error saving message to localStorage:', localError);
+        
+        // Remove the optimistic message if both API and localStorage fail
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+        
+        alert('Failed to send message. Please try again.');
+      }
+    } finally {
+      setSendingMessage(false);
     }
-    
-    // Clear input
-    setNewMessage('');
+  };
+  
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
   
   const formatTimestamp = (timestamp) => {
@@ -431,7 +535,7 @@ const ChatScreen = () => {
           }
           currentGroup = { 
             senderId: message.senderId, 
-            isUser: message.senderId === 'me',
+            isUser: message.senderId === (currentUser?.id || 'me'),
             messages: [message] 
           };
         } else {
@@ -443,7 +547,7 @@ const ChatScreen = () => {
             grouped.push(currentGroup);
             currentGroup = { 
               senderId: message.senderId, 
-              isUser: message.senderId === 'me',
+              isUser: message.senderId === (currentUser?.id || 'me'),
               messages: [message] 
             };
           }
@@ -555,7 +659,7 @@ const ChatScreen = () => {
           placeholder="Write a message..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          onKeyPress={handleKeyPress}
         />
         <SendButton 
           onClick={handleSendMessage}

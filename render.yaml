@@ -2,15 +2,44 @@ services:
   - type: web
     name: tedlist
     env: static
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm run build:windows
     staticPublishPath: ./build
     # Ensure routing works for SPAs
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
-    # Add header for security and caching
+    # Add headers for security, caching and SPA support
     headers:
       - path: /*
         name: Cache-Control
-        value: "public, max-age=86400, must-revalidate"
+        value: "public, max-age=3600, must-revalidate"
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: "1; mode=block"
+      - path: /static/*
+        name: Cache-Control
+        value: "public, max-age=31536000, immutable"
+      - path: /assets/*
+        name: Cache-Control
+        value: "public, max-age=31536000, immutable"
+      - path: /*.js
+        name: Cache-Control
+        value: "public, max-age=31536000, immutable"
+      - path: /*.css
+        name: Cache-Control
+        value: "public, max-age=31536000, immutable"
+    # Environment variables
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://tedlist-backend.onrender.com
+      - key: REACT_APP_ENVIRONMENT
+        value: production
+      - key: REACT_APP_ENABLE_LOGGING
+        value: true
