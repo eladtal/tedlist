@@ -7,37 +7,101 @@
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="Tedlist - Your marketplace for buying, selling and trading"
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
+    <title>Tedlist Marketplace</title>
+    <style>
+      /* Styles for the loading indicator */
+      #loading-indicator {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #f5f5f5;
+        z-index: 1000;
+        font-family: Arial, sans-serif;
+      }
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border-left-color: #6A5ACD;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      #error-container {
+        display: none;
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #ffebee;
+        border: 1px solid #ffcdd2;
+        border-radius: 4px;
+        color: #b71c1c;
+        max-width: 80%;
+        text-align: left;
+      }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    
+    <!-- Loading indicator that will be hidden when app loads -->
+    <div id="loading-indicator">
+      <div class="spinner"></div>
+      <p>Loading Tedlist Marketplace...</p>
+      <div id="error-container"></div>
+    </div>
+    
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+    
+    <script>
+      // Error handling to catch issues during script loading
+      window.onerror = function(message, source, lineno, colno, error) {
+        console.error('Global error caught:', message, error);
+        var errorContainer = document.getElementById('error-container');
+        if (errorContainer) {
+          errorContainer.style.display = 'block';
+          errorContainer.innerHTML = '<strong>Error loading application:</strong><br>' + 
+                                     message + '<br><br>' +
+                                     'Please try refreshing the page or contact support.';
+        }
+        return false;
+      };
+      
+      // Hide loading indicator when React mounts
+      // This will run after React renders its content
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          var rootContent = document.getElementById('root').innerHTML.trim();
+          var loadingIndicator = document.getElementById('loading-indicator');
+          
+          // If after 3 seconds the root is still empty, show an error
+          setTimeout(function() {
+            rootContent = document.getElementById('root').innerHTML.trim();
+            if (!rootContent && loadingIndicator) {
+              var errorContainer = document.getElementById('error-container');
+              if (errorContainer) {
+                errorContainer.style.display = 'block';
+                errorContainer.innerHTML = '<strong>Application failed to load</strong><br>' +
+                                          'This could be due to network issues, JavaScript errors, or routing problems.<br><br>' +
+                                          'Please check your browser console for errors and try refreshing the page.';
+              }
+            }
+          }, 3000);
+        }, 500);
+      });
+    </script>
   </body>
 </html>

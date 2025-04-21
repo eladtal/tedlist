@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useAuth } from './AuthContext';
-import { useNotifications, NOTIFICATION_TYPES } from './NotificationContext';
+import { useNotifications } from './NotificationContext';
 
 // Trade interaction statuses
 export const TRADE_STATUS = {

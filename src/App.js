@@ -22,6 +22,7 @@ import AdminScreen from './components/Admin/AdminScreen';
 import OnboardingScreen from './components/Onboarding/OnboardingScreen';
 import LoginScreen from './components/Auth/LoginScreen';
 import SignupScreen from './components/Auth/SignupScreen';
+import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { TradeInteractionProvider } from './contexts/TradeInteractionContext';
@@ -228,7 +229,9 @@ function App() {
               <PointsProvider>
                 <OnboardingProvider>
                   <Router>
-                    <AppContent />
+                    <ErrorBoundary>
+                      <AppContent />
+                    </ErrorBoundary>
                   </Router>
                 </OnboardingProvider>
               </PointsProvider>

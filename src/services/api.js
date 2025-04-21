@@ -51,13 +51,14 @@ const fetchWrapper = async (endpoint, options = {}) => {
     
     // Check for API error
     if (!response.ok) {
-      throw { 
-        response: { 
-          status: response.status, 
-          data 
-        },
-        message: data.message || 'API error'
+      // Create a proper Error object instead of throwing a literal
+      const error = new Error(data.message || 'API error');
+      // Attach additional information to the error object
+      error.response = { 
+        status: response.status, 
+        data 
       };
+      throw error;
     }
     
     return data;
