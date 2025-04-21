@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { FaHome, FaExchangeAlt, FaPlus, FaEnvelope, FaUser, FaUserShield, FaBell } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdmin } from '../../contexts/AdminContext';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useNotification } from '../../contexts/NotificationContext';
 import theme from '../../styles/theme';
 
 const NavContainer = styled.nav`
@@ -172,26 +172,23 @@ const Navbar = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
   
-  // Get notifications from context (if available)
-  let hasNotifications = false;
-  try {
-    const { getUnreadCount } = useNotifications();
-    hasNotifications = getUnreadCount ? getUnreadCount() > 0 : false;
-  } catch (error) {
-    console.warn('Notification context not available:', error);
-  }
+  // Safely use hooks - must be called unconditionally
+  const notificationContext = useNotification ? useNotification() : null;
+  const adminContext = useAdmin ? useAdmin() : null;
   
-  // Get admin status safely
-  let isAdmin = false;
-  try {
-    const adminContext = useAdmin();
-    isAdmin = adminContext?.isAdmin || false;
-  } catch (error) {
-    console.warn('Admin context not available:', error);
-  }
+  // Safely access notification data
+  const hasNotifications = notificationContext && 
+    notificationContext.unreadCount && 
+    notificationContext.unreadCount > 0;
+    
+  // Safely access admin status
+  const isAdmin = adminContext && adminContext.isAdmin;
+  
+  // Safely get the number of unread notifications
+  const unreadNotifications = notificationContext && 
+    notificationContext.unreadCount ? 
+    notificationContext.unreadCount : 0;
 
-  const unreadNotifications = hasNotifications ? getUnreadCount() : 0;
-  
   return (
     <NavContainer>
       <NavInner>
