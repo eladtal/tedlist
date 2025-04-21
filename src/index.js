@@ -3,7 +3,9 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import MinimalApp from './MinimalApp';
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
 
 // Simple CSS to ensure the page isn't blank
 const style = document.createElement('style');
@@ -29,7 +31,13 @@ const loadingTimeout = setTimeout(() => {
   if (!appRendered) {
     console.error('Application took too long to render - possible infinite loading');
     
-    // Show error message
+    // Use the global error handler if available
+    if (window.__handleReactInitError) {
+      window.__handleReactInitError(new Error('React initialization timeout after ' + LOADING_TIMEOUT + 'ms'));
+      return;
+    }
+    
+    // Fallback if global handler is not available
     const timeoutDiv = document.createElement('div');
     timeoutDiv.style.padding = '20px';
     timeoutDiv.style.margin = '20px';
@@ -59,35 +67,55 @@ const loadingTimeout = setTimeout(() => {
     } else {
       rootEl.appendChild(timeoutDiv);
     }
+    
+    // Hide the loading indicator since we're showing the error
+    const loadingIndicator = document.getElementById('loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.style.display = 'none';
+    }
   }
 }, LOADING_TIMEOUT);
 
 try {
+  // Try to mark that React is initializing
+  if (window.__reactInitialized !== undefined) {
+    window.__reactInitialized = false;
+  }
+  
   // Get the root element
   const container = document.getElementById('root');
   
   if (!container) {
     console.error('Root element not found in the DOM');
-    // Create a root element if it doesn't exist
-    const newRoot = document.createElement('div');
-    newRoot.id = 'root';
-    document.body.appendChild(newRoot);
-    console.log('Created new root element');
+    throw new Error('Root element not found in the DOM');
   }
   
   console.log('Creating React root...');
-  const root = createRoot(document.getElementById('root'));
+  const root = createRoot(container);
   
-  console.log('Rendering minimal app...');
+  console.log('Rendering actual app...');
   root.render(
     <React.StrictMode>
-      <MinimalApp />
+      <App />
     </React.StrictMode>
   );
   
   // Mark app as rendered to prevent timeout
   appRendered = true;
   clearTimeout(loadingTimeout);
+  
+  // Also mark for the error handler in index.html
+  if (window.__reactInitialized !== undefined) {
+    window.__reactInitialized = true;
+  }
+  
+  // Hide the loading indicator
+  const loadingIndicator = document.getElementById('loading-indicator');
+  if (loadingIndicator) {
+    setTimeout(() => {
+      loadingIndicator.style.display = 'none';
+    }, 500); // Short delay to ensure component has rendered
+  }
   
   console.log('Render complete!');
 } catch (error) {
@@ -96,7 +124,13 @@ try {
   // Clear timeout since we're showing an error
   clearTimeout(loadingTimeout);
   
-  // Display error on page if React fails
+  // Use the global error handler if available
+  if (window.__handleReactInitError) {
+    window.__handleReactInitError(error);
+    return;
+  }
+  
+  // Fallback if global handler is not available
   const errorDiv = document.createElement('div');
   errorDiv.style.padding = '20px';
   errorDiv.style.margin = '20px';
@@ -112,7 +146,16 @@ try {
   `;
   
   document.body.appendChild(errorDiv);
+  
+  // Hide the loading indicator since we're showing the error
+  const loadingIndicator = document.getElementById('loading-indicator');
+  if (loadingIndicator) {
+    loadingIndicator.style.display = 'none';
+  }
 }
+
+// Report web vitals for performance measuring
+reportWebVitals();
 
 // =========== ORIGINAL CODE (COMMENTED OUT) ===========
 /*
