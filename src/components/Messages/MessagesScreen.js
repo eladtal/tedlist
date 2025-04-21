@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { format } from 'date-fns';
 import { FaCircle } from 'react-icons/fa';
 import theme from '../../styles/theme';
 import { useAuth } from '../../contexts/AuthContext';
@@ -237,9 +236,13 @@ const MessagesScreen = () => {
     
     // Check if the message is from today
     if (date.toDateString() === today.toDateString()) {
-      return format(date, 'HH:mm'); // Hours:minutes format for today
+      // Return time in format 14:23
+      return date.getHours().toString().padStart(2, '0') + ':' + 
+             date.getMinutes().toString().padStart(2, '0');
     } else {
-      return format(date, 'MMM d'); // Month day format for other days
+      // Return date in format Jan 15
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return months[date.getMonth()] + ' ' + date.getDate();
     }
   };
   

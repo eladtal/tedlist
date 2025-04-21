@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { format } from 'date-fns';
 import theme from '../../styles/theme';
 import { FaArrowLeft, FaExchangeAlt, FaPaperPlane, FaHandshake, FaTimesCircle, FaInstagram, FaShareAlt } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
@@ -479,8 +478,38 @@ const ChatScreen = () => {
   };
   
   const formatTimestamp = (timestamp) => {
+    if (!timestamp) return '';
+    
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    // If less than 1 minute ago
+    if (diffMins < 1) {
+      return 'Just now';
+    }
+    
+    // If less than 1 hour ago
+    if (diffMins < 60) {
+      return `${diffMins}m ago`;
+    }
+    
+    // If less than 24 hours ago
+    if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    }
+    
+    // If less than 7 days ago
+    if (diffDays < 7) {
+      return `${diffDays}d ago`;
+    }
+    
+    // Otherwise show the date
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getMonth()]} ${date.getDate()}`;
   };
   
   const handleAcceptTrade = () => {
