@@ -35,8 +35,10 @@ export const useAdmin = () => {
   return context;
 };
 
-export const AdminProvider = ({ children }) => {
+export const AdminProvider = ({ children, adminEnabled = false }) => {
   const { currentUser } = useAuth();
+  
+  // Always set a default value for isAdmin
   const [isAdmin, setIsAdmin] = useState(false);
   const [users, setUsers] = useState([]);
   const [items, setItems] = useState([]);
@@ -55,7 +57,13 @@ export const AdminProvider = ({ children }) => {
     const checkAdminStatus = async () => {
       try {
         // In a real app, this would verify with the backend
-        // For now, we'll check if the user email contains "admin"
+        // If admin is disabled via feature flag, no one is admin
+        if (!adminEnabled) {
+          setIsAdmin(false);
+          return;
+        }
+        
+        // Otherwise, check admin status
         if (currentUser && currentUser.email && 
             (currentUser.email.includes('admin') || currentUser.role === 'admin')) {
           setIsAdmin(true);
@@ -69,7 +77,7 @@ export const AdminProvider = ({ children }) => {
     };
     
     checkAdminStatus();
-  }, [currentUser]);
+  }, [currentUser, adminEnabled]);
   
   // Fetch all users
   const fetchUsers = async () => {

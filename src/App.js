@@ -26,7 +26,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { TradeInteractionProvider } from './contexts/TradeInteractionContext';
-import { AdminProvider } from './contexts/AdminContext';
+import { AdminProvider, useAdmin } from './contexts/AdminContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import { PointsProvider } from './contexts/PointsContext';
 import MinimalApp from './MinimalApp';
@@ -153,22 +153,34 @@ const PrivateRoute = ({ children }) => {
 
 // Admin Route component to protect admin routes
 const AdminRoute = ({ children }) => {
-  const { currentUser } = useAuth();
+  // Get auth context without destructuring isAdmin
+  const authContext = useAuth();
+  const adminContext = useAdmin ? useAdmin() : { isAdmin: false };
   const location = useLocation();
   
-  // Simple admin check - can be enhanced with actual role check
-  // We're not using isAdmin property as it might not be available
-  // This is a workaround for the "Cannot destructure property 'isAdmin'" error
+  // Safe access to currentUser
+  const currentUser = authContext?.currentUser;
+  
+  // Multi-layered safety checks for admin status
   const checkIsAdmin = () => {
     // If admin feature is disabled, nobody is admin
     if (!FEATURES.USE_ADMIN) return false;
     
-    // Basic admin check, enhance as needed
-    return currentUser && currentUser.email === 'admin@example.com';
+    // First try adminContext.isAdmin if available
+    if (adminContext && typeof adminContext.isAdmin === 'boolean') {
+      return adminContext.isAdmin;
+    }
+    
+    // Fallback to email check
+    return currentUser && 
+           currentUser.email && 
+           (currentUser.email === 'admin@example.com' || 
+            currentUser.email.includes('admin'));
   };
   
+  // If not authenticated or not admin, redirect to home
   if (!currentUser || !checkIsAdmin()) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/" replace />;
   }
   
   return children;
@@ -307,9 +319,9 @@ const withProviders = (children) => {
     result = <TradeInteractionProvider>{result}</TradeInteractionProvider>;
   }
   
-  if (FEATURES.USE_ADMIN) {
-    result = <AdminProvider>{result}</AdminProvider>;
-  }
+  // Always include AdminProvider but honor feature flag internally
+  // This prevents "Cannot destructure property 'isAdmin'" errors
+  result = <AdminProvider adminEnabled={FEATURES.USE_ADMIN}>{result}</AdminProvider>;
   
   if (FEATURES.USE_NOTIFICATIONS) {
     result = <NotificationProvider>{result}</NotificationProvider>;
