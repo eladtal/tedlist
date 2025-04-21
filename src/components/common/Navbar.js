@@ -1,10 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaExchangeAlt, FaPlus, FaEnvelope, FaUser, FaUserShield, FaBell } from 'react-icons/fa';
+import { FaHome, FaExchangeAlt, FaPlus, FaEnvelope, FaUser, FaUserShield } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdmin } from '../../contexts/AdminContext';
-import { useNotification } from '../../contexts/NotificationContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import theme from '../../styles/theme';
 
 const NavContainer = styled.nav`
@@ -36,24 +36,11 @@ const NavInner = styled.div`
   }
 `;
 
-const NavLogo = styled.div`
-  display: none;
-  font-size: ${theme.typography.fontSize.large};
-  font-weight: ${theme.typography.fontWeight.bold};
-  color: ${theme.colors.textPrimary};
-  margin-right: auto;
-  padding: 0 ${theme.spacing.md};
-  
-  @media (min-width: ${theme.breakpoints.md}) {
-    display: block;
-  }
-`;
-
-const NavLink = styled(Link)`
+const StyledLink = styled(Link)`
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: ${props => props.active ? theme.colors.primary : theme.colors.textSecondary};
+  color: ${props => props.active === 'true' ? theme.colors.primary : theme.colors.textSecondary};
   font-size: ${theme.typography.fontSize.small};
   padding: ${theme.spacing.xs} ${theme.spacing.sm};
   transition: color 0.2s;
@@ -73,80 +60,14 @@ const NavLink = styled(Link)`
   }
 `;
 
-const NavIcon = styled.div`
-  font-size: 1.25rem;
-  margin-bottom: ${theme.spacing.xs};
-  
-  @media (min-width: ${theme.breakpoints.md}) {
-    margin-bottom: 0;
-  }
-`;
-
-const NavLabel = styled.span`
+const IconLabel = styled.span`
   @media (max-width: ${theme.breakpoints.sm}) {
     font-size: 0.7rem;
   }
 `;
 
-const AddButton = styled(Link)`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: ${theme.colors.accent};
-  color: ${theme.colors.textPrimary};
-  font-size: 1.5rem;
+const MessageIconWrapper = styled.div`
   position: relative;
-  bottom: ${theme.spacing.md};
-  box-shadow: ${theme.shadows.medium};
-  transition: transform 0.2s, box-shadow 0.2s;
-  
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: ${theme.shadows.large};
-  }
-  
-  @media (min-width: ${theme.breakpoints.md}) {
-    position: static;
-    width: auto;
-    height: auto;
-    border-radius: ${theme.borderRadius.medium};
-    padding: ${theme.spacing.sm} ${theme.spacing.md};
-    margin-left: auto;
-    margin-right: ${theme.spacing.md};
-    
-    svg {
-      margin-right: ${theme.spacing.xs};
-    }
-  }
-`;
-
-const AddButtonLabel = styled.span`
-  display: none;
-  
-  @media (min-width: ${theme.breakpoints.md}) {
-    display: inline;
-  }
-`;
-
-const ProfileAvatar = styled.div`
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background-image: url(${props => props.src || 'https://randomuser.me/api/portraits/lego/1.jpg'});
-  background-size: cover;
-  background-position: center;
-  margin-bottom: ${theme.spacing.xs};
-  border: 2px solid ${props => props.active ? theme.colors.primary : 'transparent'};
-  
-  @media (min-width: ${theme.breakpoints.md}) {
-    margin-bottom: 0;
-    margin-right: ${theme.spacing.xs};
-    width: 28px;
-    height: 28px;
-  }
 `;
 
 const NotificationBadge = styled.div`
@@ -164,88 +85,79 @@ const NotificationBadge = styled.div`
   justify-content: center;
 `;
 
-const IconWrapper = styled.div`
-  position: relative;
-`;
+const NavbarInnerComponent = ({ currentUser, notificationData, adminData, location }) => {
+  const hasNotifications = Boolean(notificationData?.unreadCount);
+  const isAdmin = Boolean(adminData?.isAdmin);
+  const unreadNotifications = notificationData?.unreadCount ?? 0;
+  
+  return (
+    <NavContainer>
+      <NavInner>
+        <StyledLink to="/" active={location.pathname === '/' ? 'true' : 'false'}>
+          <FaHome size={20} />
+          <IconLabel>Home</IconLabel>
+        </StyledLink>
+        
+        <StyledLink to="/swipe" active={location.pathname === '/swipe' ? 'true' : 'false'}>
+          <FaExchangeAlt size={20} />
+          <IconLabel>Swipe</IconLabel>
+        </StyledLink>
+        
+        <StyledLink to="/upload" active={location.pathname === '/upload' ? 'true' : 'false'}>
+          <FaPlus size={20} />
+          <IconLabel>Upload</IconLabel>
+        </StyledLink>
+        
+        <StyledLink 
+          to="/messages" 
+          active={location.pathname === '/messages' ? 'true' : 'false'}
+        >
+          <MessageIconWrapper>
+            <FaEnvelope size={20} />
+            {hasNotifications && (
+              <NotificationBadge>
+                {unreadNotifications > 9 ? '9+' : unreadNotifications}
+              </NotificationBadge>
+            )}
+          </MessageIconWrapper>
+          <IconLabel>Messages</IconLabel>
+        </StyledLink>
+        
+        <StyledLink 
+          to="/profile" 
+          active={location.pathname === '/profile' ? 'true' : 'false'}
+        >
+          <FaUser size={20} />
+          <IconLabel>Profile</IconLabel>
+        </StyledLink>
+        
+        {isAdmin && (
+          <StyledLink 
+            to="/admin" 
+            active={location.pathname === '/admin' ? 'true' : 'false'}
+          >
+            <FaUserShield size={20} />
+            <IconLabel>Admin</IconLabel>
+          </StyledLink>
+        )}
+      </NavInner>
+    </NavContainer>
+  );
+};
 
 const Navbar = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
-  
-  // Safely use hooks - must be called unconditionally
-  const notificationContext = useNotification ? useNotification() : null;
-  const adminContext = useAdmin ? useAdmin() : null;
-  
-  // Safely access notification data
-  const hasNotifications = notificationContext && 
-    notificationContext.unreadCount && 
-    notificationContext.unreadCount > 0;
-    
-  // Safely access admin status
-  const isAdmin = adminContext && adminContext.isAdmin;
-  
-  // Safely get the number of unread notifications
-  const unreadNotifications = notificationContext && 
-    notificationContext.unreadCount ? 
-    notificationContext.unreadCount : 0;
+  const notificationData = useNotifications();
+  const adminData = useAdmin();
 
   return (
-    <NavContainer>
-      <NavInner>
-        <NavLogo>Tedlist</NavLogo>
-        
-        <NavLink to="/" active={location.pathname === '/' ? 1 : 0}>
-          <NavIcon><FaHome /></NavIcon>
-          <NavLabel>Home</NavLabel>
-        </NavLink>
-        
-        <NavLink to="/swipe" active={location.pathname === '/swipe' ? 1 : 0}>
-          <NavIcon><FaExchangeAlt /></NavIcon>
-          <NavLabel>Swipe</NavLabel>
-        </NavLink>
-        
-        <AddButton to="/upload">
-          <FaPlus />
-          <AddButtonLabel>Post Item</AddButtonLabel>
-        </AddButton>
-        
-        <NavLink to="/notifications" active={location.pathname === '/notifications' ? 1 : 0}>
-          <NavIcon>
-            <IconWrapper>
-              <FaBell />
-              {unreadNotifications > 0 && (
-                <NotificationBadge>{unreadNotifications > 9 ? '9+' : unreadNotifications}</NotificationBadge>
-              )}
-            </IconWrapper>
-          </NavIcon>
-          <NavLabel>Notifications</NavLabel>
-        </NavLink>
-        
-        <NavLink to="/messages" active={location.pathname === '/messages' ? 1 : 0}>
-          <NavIcon><FaEnvelope /></NavIcon>
-          <NavLabel>Messages</NavLabel>
-        </NavLink>
-        
-        <NavLink to="/profile" active={location.pathname === '/profile' ? 1 : 0}>
-          {currentUser?.profileImage ? (
-            <ProfileAvatar 
-              src={currentUser.profileImage} 
-              active={location.pathname === '/profile' ? 1 : 0} 
-            />
-          ) : (
-            <NavIcon><FaUser /></NavIcon>
-          )}
-          <NavLabel>Profile</NavLabel>
-        </NavLink>
-        
-        {isAdmin && (
-          <NavLink to="/admin" active={location.pathname === '/admin' ? 1 : 0}>
-            <NavIcon><FaUserShield /></NavIcon>
-            <NavLabel>Admin</NavLabel>
-          </NavLink>
-        )}
-      </NavInner>
-    </NavContainer>
+    <NavbarInnerComponent
+      currentUser={currentUser}
+      notificationData={notificationData}
+      adminData={adminData}
+      location={location}
+    />
   );
 };
 
