@@ -1,5 +1,6 @@
 /**
- * API service using native fetch instead of axios
+ * Temporary API service without Axios dependency
+ * Use this until axios can be properly installed
  */
 
 // Base API URL
@@ -68,7 +69,7 @@ const fetchWrapper = async (endpoint, options = {}) => {
 };
 
 // API request methods
-const api = {
+export default {
   // GET request
   get: (endpoint, params = {}) => {
     // Convert params to URL query string
@@ -104,5 +105,3 @@ const api = {
     });
   }
 };
-
-export default api;
