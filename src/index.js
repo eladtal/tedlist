@@ -34,44 +34,43 @@ const loadingTimeout = setTimeout(() => {
     // Use the global error handler if available
     if (window.__handleReactInitError) {
       window.__handleReactInitError(new Error('React initialization timeout after ' + LOADING_TIMEOUT + 'ms'));
-      return;
-    }
-    
-    // Fallback if global handler is not available
-    const timeoutDiv = document.createElement('div');
-    timeoutDiv.style.padding = '20px';
-    timeoutDiv.style.margin = '20px';
-    timeoutDiv.style.backgroundColor = '#fff3cd';
-    timeoutDiv.style.border = '1px solid #ffeeba';
-    timeoutDiv.style.borderRadius = '4px';
-    timeoutDiv.style.color = '#856404';
-    
-    timeoutDiv.innerHTML = `
-      <h2>Loading Timeout</h2>
-      <p>The application is taking too long to load. This may be due to an infinite loading state or network issues.</p>
-      <div style="margin: 20px 0;">
-        <button onclick="window.location.href='/react-app.html'" style="padding: 8px 15px; background: #6A5ACD; color: white; border: none; border-radius: 4px; margin-right: 10px; cursor: pointer;">
-          Try CDN Version
-        </button>
-        <button onclick="window.location.reload()" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
-          Reload Page
-        </button>
-      </div>
-      <p>You can also try clearing your browser cache and cookies.</p>
-    `;
-    
-    // Add to body if root is empty or stuck
-    const rootEl = document.getElementById('root');
-    if (!rootEl || rootEl.innerHTML.trim() === '') {
-      document.body.appendChild(timeoutDiv);
     } else {
-      rootEl.appendChild(timeoutDiv);
-    }
-    
-    // Hide the loading indicator since we're showing the error
-    const loadingIndicator = document.getElementById('loading-indicator');
-    if (loadingIndicator) {
-      loadingIndicator.style.display = 'none';
+      // Fallback if global handler is not available
+      const timeoutDiv = document.createElement('div');
+      timeoutDiv.style.padding = '20px';
+      timeoutDiv.style.margin = '20px';
+      timeoutDiv.style.backgroundColor = '#fff3cd';
+      timeoutDiv.style.border = '1px solid #ffeeba';
+      timeoutDiv.style.borderRadius = '4px';
+      timeoutDiv.style.color = '#856404';
+      
+      timeoutDiv.innerHTML = `
+        <h2>Loading Timeout</h2>
+        <p>The application is taking too long to load. This may be due to an infinite loading state or network issues.</p>
+        <div style="margin: 20px 0;">
+          <button onclick="window.location.href='/react-app.html'" style="padding: 8px 15px; background: #6A5ACD; color: white; border: none; border-radius: 4px; margin-right: 10px; cursor: pointer;">
+            Try CDN Version
+          </button>
+          <button onclick="window.location.reload()" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Reload Page
+          </button>
+        </div>
+        <p>You can also try clearing your browser cache and cookies.</p>
+      `;
+      
+      // Add to body if root is empty or stuck
+      const rootEl = document.getElementById('root');
+      if (!rootEl || rootEl.innerHTML.trim() === '') {
+        document.body.appendChild(timeoutDiv);
+      } else {
+        rootEl.appendChild(timeoutDiv);
+      }
+      
+      // Hide the loading indicator since we're showing the error
+      const loadingIndicator = document.getElementById('loading-indicator');
+      if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+      }
     }
   }
 }, LOADING_TIMEOUT);
@@ -127,30 +126,29 @@ try {
   // Use the global error handler if available
   if (window.__handleReactInitError) {
     window.__handleReactInitError(error);
-    return;
-  }
-  
-  // Fallback if global handler is not available
-  const errorDiv = document.createElement('div');
-  errorDiv.style.padding = '20px';
-  errorDiv.style.margin = '20px';
-  errorDiv.style.backgroundColor = '#ffebee';
-  errorDiv.style.border = '1px solid #ffcdd2';
-  errorDiv.style.borderRadius = '4px';
-  
-  errorDiv.innerHTML = `
-    <h2 style="color: #b71c1c;">React Initialization Error</h2>
-    <p>${error.message}</p>
-    <pre style="background: #f8f8f8; padding: 15px; overflow: auto;">${error.stack}</pre>
-    <p><a href="/react-app.html" style="color: #2196F3;">Go to CDN Version</a></p>
-  `;
-  
-  document.body.appendChild(errorDiv);
-  
-  // Hide the loading indicator since we're showing the error
-  const loadingIndicator = document.getElementById('loading-indicator');
-  if (loadingIndicator) {
-    loadingIndicator.style.display = 'none';
+  } else {
+    // Fallback if global handler is not available
+    const errorDiv = document.createElement('div');
+    errorDiv.style.padding = '20px';
+    errorDiv.style.margin = '20px';
+    errorDiv.style.backgroundColor = '#ffebee';
+    errorDiv.style.border = '1px solid #ffcdd2';
+    errorDiv.style.borderRadius = '4px';
+    
+    errorDiv.innerHTML = `
+      <h2 style="color: #b71c1c;">React Initialization Error</h2>
+      <p>${error.message}</p>
+      <pre style="background: #f8f8f8; padding: 15px; overflow: auto;">${error.stack}</pre>
+      <p><a href="/react-app.html" style="color: #2196F3;">Go to CDN Version</a></p>
+    `;
+    
+    document.body.appendChild(errorDiv);
+    
+    // Hide the loading indicator since we're showing the error
+    const loadingIndicator = document.getElementById('loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.style.display = 'none';
+    }
   }
 }
 
