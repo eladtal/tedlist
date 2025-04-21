@@ -94,7 +94,7 @@ try {
   console.log('Creating React root...');
   const root = createRoot(container);
   
-  console.log('Rendering full app with feature flags...');
+  console.log('Rendering app with feature flag system...');
   root.render(
     <React.StrictMode>
       <App />

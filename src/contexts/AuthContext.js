@@ -157,7 +157,9 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateProfile,
-    loading
+    loading,
+    // Add isAdmin property to prevent "Cannot destructure property 'isAdmin'" error
+    isAdmin: currentUser && currentUser.email === 'admin@example.com'
   };
   
   return (

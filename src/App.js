@@ -153,10 +153,21 @@ const PrivateRoute = ({ children }) => {
 
 // Admin Route component to protect admin routes
 const AdminRoute = ({ children }) => {
-  const { currentUser, isAdmin } = useAuth();
+  const { currentUser } = useAuth();
   const location = useLocation();
   
-  if (!currentUser || !isAdmin) {
+  // Simple admin check - can be enhanced with actual role check
+  // We're not using isAdmin property as it might not be available
+  // This is a workaround for the "Cannot destructure property 'isAdmin'" error
+  const checkIsAdmin = () => {
+    // If admin feature is disabled, nobody is admin
+    if (!FEATURES.USE_ADMIN) return false;
+    
+    // Basic admin check, enhance as needed
+    return currentUser && currentUser.email === 'admin@example.com';
+  };
+  
+  if (!currentUser || !checkIsAdmin()) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
