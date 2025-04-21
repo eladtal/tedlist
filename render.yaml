@@ -2,9 +2,15 @@ services:
   - type: web
     name: tedlist
     env: static
-    buildCommand: npm run build
+    buildCommand: npm install && npm run build
     staticPublishPath: ./build
+    # Ensure routing works for SPAs
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
+    # Add header for security and caching
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: "public, max-age=86400, must-revalidate"
