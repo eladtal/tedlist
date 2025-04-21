@@ -226,17 +226,20 @@ const SignupScreen = () => {
     
     try {
       setLoading(true);
+      
+      // The signup function will now send data to the API instead of storing in localStorage
       await signup(formData.email, formData.password, formData.username, profileImage);
       
-      // Redirect to home on success
-      navigate('/');
+      // Redirect to home on success and show onboarding for new users
+      navigate('/', { state: { showOnboarding: true } });
     } catch (error) {
-      setError(error.message);
+      console.error('Signup error:', error);
+      setError(error.message || 'Failed to create account. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-  
+
   return (
     <Container>
       <LogoContainer>

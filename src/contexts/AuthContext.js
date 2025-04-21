@@ -1,4 +1,11 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { 
+  registerUser, 
+  loginUser, 
+  logoutUser, 
+  getCurrentUser, 
+  isLoggedIn 
+} from '../services/auth.service';
 
 // Create context
 export const AuthContext = createContext();
@@ -12,16 +19,21 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // Check if user is already logged in (from localStorage)
+  // Check if user is already logged in (using token)
   useEffect(() => {
-    const checkLoggedInUser = () => {
+    const checkLoggedInUser = async () => {
       try {
-        const savedUser = localStorage.getItem('tedlistUser');
-        if (savedUser) {
-          setCurrentUser(JSON.parse(savedUser));
+        if (isLoggedIn()) {
+          // Token exists, fetch current user data
+          const response = await getCurrentUser();
+          if (response.success && response.data) {
+            setCurrentUser(response.data);
+          }
         }
       } catch (error) {
         console.error('Error loading user data:', error);
+        // If there's an error with the token, remove it
+        localStorage.removeItem('tedlist_token');
       } finally {
         setLoading(false);
       }
@@ -33,36 +45,24 @@ export const AuthProvider = ({ children }) => {
   // Sign up function
   const signup = async (email, password, username, profileImage = null) => {
     try {
-      // In a real app, this would make an API call to create a new user
-      // For this demo, we'll simply create a user object and store it in localStorage
-      
-      // Check if email already exists
-      const existingUsers = JSON.parse(localStorage.getItem('tedlistUsers') || '[]');
-      const userExists = existingUsers.some(user => user.email === email);
-      
-      if (userExists) {
-        throw new Error('Email already in use');
-      }
-      
-      // Create new user
-      const newUser = {
-        id: `user_${Date.now()}`,
+      // Use the API service to register user
+      const userData = {
         email,
         username,
-        profileImage: profileImage || 'https://randomuser.me/api/portraits/lego/1.jpg',
-        createdAt: new Date().toISOString()
+        password,
+        profileImage: profileImage || 'https://randomuser.me/api/portraits/lego/1.jpg'
       };
       
-      // Add to users list
-      existingUsers.push({...newUser, password}); // Only store password in the users list, not in current user
-      localStorage.setItem('tedlistUsers', JSON.stringify(existingUsers));
+      const response = await registerUser(userData);
       
-      // Set current user (without password)
-      setCurrentUser(newUser);
-      localStorage.setItem('tedlistUser', JSON.stringify(newUser));
+      // If successful, set current user
+      if (response.success && response.user) {
+        setCurrentUser(response.user);
+      }
       
-      return newUser;
+      return response.user;
     } catch (error) {
+      console.error('Signup error:', error);
       throw error;
     }
   };
@@ -70,67 +70,72 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = async (email, password) => {
     try {
-      // In a real app, this would verify credentials with an API
-      // For this demo, we'll check against localStorage
+      // Use the API service to login
+      const response = await loginUser({ email, password });
       
-      const existingUsers = JSON.parse(localStorage.getItem('tedlistUsers') || '[]');
-      const user = existingUsers.find(user => user.email === email && user.password === password);
-      
-      if (!user) {
-        throw new Error('Invalid email or password');
+      // If successful, set current user
+      if (response.success && response.user) {
+        setCurrentUser(response.user);
       }
       
-      // Create a user object without the password
-      const loggedInUser = {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        profileImage: user.profileImage,
-        createdAt: user.createdAt
-      };
-      
-      // Set current user
-      setCurrentUser(loggedInUser);
-      localStorage.setItem('tedlistUser', JSON.stringify(loggedInUser));
-      
-      return loggedInUser;
+      return response.user;
     } catch (error) {
+      console.error('Login error:', error);
       throw error;
     }
   };
   
   // Logout function
   const logout = () => {
+    // Use the API service to logout
+    logoutUser();
     setCurrentUser(null);
-    localStorage.removeItem('tedlistUser');
   };
   
   // Update profile function
-  const updateProfile = (updates) => {
+  const updateProfile = async (profileData) => {
     try {
-      if (!currentUser) throw new Error('No user logged in');
+      // In a real app with API, we'd make an API call here
+      // For now, update locally but prepare for future API integration
+      const api = await import('../services/api').then(module => module.default);
       
-      // Update current user
-      const updatedUser = { ...currentUser, ...updates };
-      
-      // Update in localStorage (both current user and users list)
-      localStorage.setItem('tedlistUser', JSON.stringify(updatedUser));
-      
-      const existingUsers = JSON.parse(localStorage.getItem('tedlistUsers') || '[]');
-      const updatedUsers = existingUsers.map(user => 
-        user.id === currentUser.id ? { ...user, ...updates } : user
-      );
-      localStorage.setItem('tedlistUsers', JSON.stringify(updatedUsers));
-      
-      // Update state
-      setCurrentUser(updatedUser);
-      
-      return updatedUser;
+      try {
+        // Try to update via API if available
+        const response = await api.put('/users/profile', profileData);
+        if (response.data.success) {
+          setCurrentUser(response.data.user);
+          return response.data.user;
+        }
+      } catch (apiError) {
+        console.log('API not yet available, falling back to localStorage', apiError);
+        
+        // Fallback to localStorage for now
+        if (currentUser) {
+          const updatedUser = { ...currentUser, ...profileData };
+          
+          // Update current user state
+          setCurrentUser(updatedUser);
+          
+          // Update in localStorage too (legacy support)
+          localStorage.setItem('tedlistUser', JSON.stringify(updatedUser));
+          
+          // Update in users list (legacy support)
+          const existingUsers = JSON.parse(localStorage.getItem('tedlistUsers') || '[]');
+          const updatedUsers = existingUsers.map(user => 
+            user.id === currentUser.id ? { ...user, ...profileData } : user
+          );
+          localStorage.setItem('tedlistUsers', JSON.stringify(updatedUsers));
+          
+          return updatedUser;
+        }
+      }
     } catch (error) {
+      console.error('Update profile error:', error);
       throw error;
     }
   };
   
+  // Context value
   const value = {
     currentUser,
     signup,

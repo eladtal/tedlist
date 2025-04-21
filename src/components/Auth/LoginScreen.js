@@ -149,13 +149,14 @@ const LoginScreen = () => {
       // Redirect to home on success
       navigate('/');
     } catch (error) {
-      setError(error.message);
+      console.error('Login error:', error);
+      setError(error.message || 'Failed to log in. Please check your credentials.');
     } finally {
       setLoading(false);
     }
   };
   
-  // If no users exist yet, create a demo user
+  // Demo login now uses the API with a predefined account
   const handleDemoLogin = async () => {
     try {
       setLoading(true);
@@ -163,31 +164,11 @@ const LoginScreen = () => {
       const demoEmail = 'demo@tedlist.com';
       const demoPassword = 'demopassword';
       
-      // Check if users exist
-      const existingUsers = JSON.parse(localStorage.getItem('tedlistUsers') || '[]');
-      
-      // If demo user doesn't exist, create it
-      if (!existingUsers.some(user => user.email === demoEmail)) {
-        const demoUser = {
-          id: 'user_demo',
-          email: demoEmail,
-          password: demoPassword,
-          username: 'Demo User',
-          profileImage: 'https://randomuser.me/api/portraits/lego/1.jpg',
-          createdAt: new Date().toISOString()
-        };
-        
-        existingUsers.push(demoUser);
-        localStorage.setItem('tedlistUsers', JSON.stringify(existingUsers));
-      }
-      
-      // Log in as demo user
       await login(demoEmail, demoPassword);
-      
-      // Redirect to home
       navigate('/');
     } catch (error) {
-      setError(error.message);
+      console.error('Demo login error:', error);
+      setError('Demo account login failed. Please try regular login.');
     } finally {
       setLoading(false);
     }

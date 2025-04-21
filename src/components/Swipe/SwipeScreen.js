@@ -6,7 +6,12 @@ import theme from '../../styles/theme';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTradeInteraction } from '../../contexts/TradeInteractionContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { useOnboarding } from '../../contexts/OnboardingContext';
+import { useOnboarding, ONBOARDING_STEPS } from '../../contexts/OnboardingContext';
+import { 
+  getSwipeItemsWithFallback, 
+  getUserSwipesWithFallback, 
+  recordSwipe as apiRecordSwipe 
+} from '../../services/swipe.service';
 
 const Container = styled.div`
   padding-bottom: 80px;
@@ -282,27 +287,28 @@ const SwipeScreen = () => {
   const [showDislikeMessage, setShowDislikeMessage] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [swipedItems, setSwipedItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   
-  // Load swiped items from localStorage
+  // Load swiped items from API or localStorage
   useEffect(() => {
-    if (currentUser) {
-      try {
-        const savedSwipes = localStorage.getItem('tedlistSwipes');
-        
-        if (savedSwipes) {
-          const allSwipes = JSON.parse(savedSwipes);
-          const userSwipes = allSwipes[currentUser.id] || [];
+    const loadSwipedItems = async () => {
+      if (currentUser) {
+        try {
+          const userSwipes = await getUserSwipesWithFallback(currentUser.id);
           setSwipedItems(userSwipes);
+        } catch (error) {
+          console.error('Error loading swipes:', error);
         }
-      } catch (error) {
-        console.error('Error loading swipes:', error);
       }
-    }
+    };
+    
+    loadSwipedItems();
   }, [currentUser]);
   
-  // Save swipes to localStorage
-  const saveSwipes = (newSwipes) => {
+  // Save swipes to localStorage and API
+  const saveSwipes = async (newSwipes) => {
     try {
+      // Legacy localStorage support
       const savedSwipes = localStorage.getItem('tedlistSwipes');
       let allSwipes = {};
       
@@ -313,12 +319,12 @@ const SwipeScreen = () => {
       allSwipes[currentUser.id] = newSwipes;
       localStorage.setItem('tedlistSwipes', JSON.stringify(allSwipes));
     } catch (error) {
-      console.error('Error saving swipes:', error);
+      console.error('Error saving swipes to localStorage:', error);
     }
   };
   
   // Add or update a swipe
-  const recordSwipe = (itemId, direction) => {
+  const recordSwipe = async (itemId, direction) => {
     // Check if item was already swiped
     const existingSwipeIndex = swipedItems.findIndex(swipe => swipe.itemId === itemId);
     let newSwipes = [...swipedItems];
@@ -343,6 +349,13 @@ const SwipeScreen = () => {
     setSwipedItems(newSwipes);
     saveSwipes(newSwipes);
     
+    // Record swipe in API
+    try {
+      await apiRecordSwipe(itemId, direction);
+    } catch (error) {
+      console.log('API swipe recording not available yet:', error);
+    }
+    
     return newSwipes;
   };
   
@@ -352,108 +365,41 @@ const SwipeScreen = () => {
     return swipe ? swipe.direction : null;
   };
   
-  // Load items on component mount
+  // Load items on component mount and when filters change
   useEffect(() => {
-    // Load sample items along with any user items from localStorage
-    const loadItems = () => {
-      // Sample data
-      const sampleItems = [
-        {
-          id: 's1',
-          title: 'Vintage Record Player',
-          price: 'For Trade',
-          description: 'Vintage record player in great working condition. Looking to trade for audio equipment or books.',
-          images: ['https://images.unsplash.com/photo-1461360228754-6e81c478b882?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80'],
-          owner: 'David',
-          ownerId: 'user1',
-          listingType: 'trade'
-        },
-        {
-          id: 's2',
-          title: 'Professional Camera Lenses',
-          price: '₪ 1,200',
-          description: 'Set of professional camera lenses in excellent condition.',
-          images: ['https://images.unsplash.com/photo-1520549233664-03f65c1d1327?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80'],
-          owner: 'Maya',
-          ownerId: 'user2',
-          listingType: 'sale'
-        },
-        {
-          id: 's3',
-          title: 'Handcrafted Ceramic Set',
-          price: 'For Trade',
-          description: 'Beautiful handcrafted ceramic plates and bowls. Each piece is unique. Looking to trade for home decor or plants.',
-          images: ['https://images.unsplash.com/photo-1610701596007-11502861dcfa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80'],
-          owner: 'Noa',
-          ownerId: 'user3',
-          listingType: 'trade'
-        },
-        {
-          id: 's4',
-          title: 'Vintage Comic Book Collection',
-          price: '₪ 800',
-          description: 'Collection of well-preserved vintage comic books from the 80s and 90s.',
-          images: ['https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80'],
-          owner: 'Dan',
-          ownerId: 'user4',
-          listingType: 'sale'
-        },
-        {
-          id: 's5',
-          title: 'Professional DJ Equipment',
-          price: 'For Trade',
-          description: 'Professional DJ setup including mixer and controllers. Everything in great condition. Looking for musical instruments or audio gear.',
-          images: ['https://images.unsplash.com/photo-1571510649755-66c9eb133540?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80'],
-          owner: 'Yael',
-          ownerId: 'user5',
-          listingType: 'trade'
-        }
-      ];
+    const loadItems = async () => {
+      setLoading(true);
       
-      // Get user-posted items from localStorage
-      let userItems = [];
       try {
-        const savedItems = localStorage.getItem('tedlistItems');
-        if (savedItems) {
-          userItems = JSON.parse(savedItems);
-        }
-      } catch (e) {
-        console.error('Error loading user items:', e);
-      }
-      
-      // Combine sample and user items
-      const allItems = [...sampleItems, ...userItems];
-      
-      // Apply filters
-      let filteredItems = allItems;
-      
-      // Filter by type if not 'all'
-      if (filterType !== 'all') {
-        filteredItems = filteredItems.filter(item => item.listingType === filterType);
-      }
-      
-      // Hide user's own items if hideMyItems is true
-      if (hideMyItems && currentUser) {
-        filteredItems = filteredItems.filter(item => item.ownerId !== currentUser.id);
-      }
-      
-      // Prioritize items that haven't been swiped yet
-      filteredItems.sort((a, b) => {
-        const aSwipeDirection = getSwipeDirection(a.id);
-        const bSwipeDirection = getSwipeDirection(b.id);
+        // Get items from API with fallback to localStorage + sample data
+        const fetchedItems = await getSwipeItemsWithFallback({
+          listingType: filterType,
+          hideMyItems,
+          currentUserId: currentUser?.id
+        });
         
-        if (aSwipeDirection === null && bSwipeDirection !== null) return -1;
-        if (aSwipeDirection !== null && bSwipeDirection === null) return 1;
-        return 0;
-      });
-      
-      setItems(filteredItems);
-      setCurrentIndex(0);
+        // Prioritize items that haven't been swiped yet
+        fetchedItems.sort((a, b) => {
+          const aSwipeDirection = getSwipeDirection(a.id);
+          const bSwipeDirection = getSwipeDirection(b.id);
+          
+          if (aSwipeDirection === null && bSwipeDirection !== null) return -1;
+          if (aSwipeDirection !== null && bSwipeDirection === null) return 1;
+          return 0;
+        });
+        
+        setItems(fetchedItems);
+        setCurrentIndex(0);
+      } catch (error) {
+        console.error('Error loading items:', error);
+      } finally {
+        setLoading(false);
+      }
     };
     
     loadItems();
-  }, [filterType, hideMyItems, currentUser, swipedItems]);
-  
+  }, [filterType, hideMyItems, currentUser?.id]);
+
   const handleSwipe = (direction) => {
     if (isAnimating || items.length === 0 || currentIndex >= items.length) return;
     

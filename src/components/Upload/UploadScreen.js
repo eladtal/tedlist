@@ -5,6 +5,8 @@ import { FaCamera, FaTimes, FaArrowLeft, FaCheckCircle, FaUpload, FaTag, FaHands
 import theme from '../../styles/theme';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOnboarding, ONBOARDING_STEPS } from '../../contexts/OnboardingContext';
+import { createItem } from '../../services/item.service';
+import { uploadImages, formatItemForApi } from '../../services/upload.service';
 
 const Container = styled.div`
   padding: ${theme.spacing.md};
@@ -467,51 +469,77 @@ const UploadScreen = () => {
     setIsSubmitting(true);
     
     try {
-      // Construct the new item object
-      const newItem = {
-        id: Date.now().toString(),
-        title: formState.title,
-        price: formState.listingType === 'free' ? 'Free' : formState.listingType === 'trade' ? 'For Trade' : `₪ ${formState.price}`,
-        description: formState.description,
-        location: formState.location,
-        category: formState.category,
-        listingType: formState.listingType,
-        images: photos,
-        datePosted: new Date().toISOString(),
-        imageUrl: photos[0], // First photo as main image
-      };
+      // Format price based on listing type
+      const priceDisplay = formState.listingType === 'free' 
+        ? 'Free' 
+        : formState.listingType === 'trade' 
+          ? 'For Trade' 
+          : `₪ ${formState.price}`;
       
-      // Get existing items or initialize empty array
-      const existingItemsJson = localStorage.getItem('tedlistUserItems');
-      const existingItems = existingItemsJson ? JSON.parse(existingItemsJson) : [];
-      
-      // Add new item
-      existingItems.unshift(newItem);
-      
-      // Save back to localStorage
-      localStorage.setItem('tedlistUserItems', JSON.stringify(existingItems));
-      
-      // Complete the upload item onboarding step
-      completeStep(ONBOARDING_STEPS.UPLOAD_ITEM);
+      // Try to upload through the API first
+      let result = null;
+      try {
+        // Construct the item data for API submission
+        const itemData = formatItemForApi(
+          formState, 
+          photos, // Will be processed by the API
+          currentUser
+        );
+        
+        // Create item in the database
+        result = await createItem(itemData);
+        
+        // Complete the upload item onboarding step
+        completeStep(ONBOARDING_STEPS.UPLOAD_ITEM);
+        
+        console.log('Item successfully created in database:', result);
+      } catch (apiError) {
+        console.error('API upload failed, falling back to localStorage:', apiError);
+        
+        // Fallback to localStorage if API fails
+        // Construct the new item object for localStorage
+        const newItem = {
+          id: Date.now().toString(),
+          title: formState.title,
+          price: priceDisplay,
+          description: formState.description,
+          location: formState.location,
+          category: formState.category,
+          listingType: formState.listingType,
+          images: photos,
+          datePosted: new Date().toISOString(),
+          imageUrl: photos[0], // First photo as main image
+          userId: currentUser?.id
+        };
+        
+        // Get existing items or initialize empty array
+        const existingItemsJson = localStorage.getItem('tedlistUserItems');
+        const existingItems = existingItemsJson ? JSON.parse(existingItemsJson) : [];
+        
+        // Add new item
+        existingItems.unshift(newItem);
+        
+        // Save back to localStorage
+        localStorage.setItem('tedlistUserItems', JSON.stringify(existingItems));
+        
+        // Complete the upload item onboarding step
+        completeStep(ONBOARDING_STEPS.UPLOAD_ITEM);
+      }
       
       // Show success message
       setSuccessSubmission(true);
       
       // Reset form after 2 seconds, then redirect to profile
       setTimeout(() => {
-        setFormState(initialFormState);
-        setPhotos([]);
-        setSuccessSubmission(false);
-        navigate('/profile');
+        navigate('/profile', { state: { newItemAdded: true } });
       }, 2000);
     } catch (error) {
-      console.error('Error posting item:', error);
-      alert('There was an error posting your item. Please try again.');
-    } finally {
+      console.error('Error uploading item:', error);
+      alert('Failed to upload item. Please try again.');
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <Container>
       <Header>
