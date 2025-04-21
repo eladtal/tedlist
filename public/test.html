@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tedlist Asset Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .failure {
+      color: red;
+      font-weight: bold;
+    }
+    .card {
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>Tedlist Asset Loading Test</h1>
+  
+  <div class="card">
+    <h2>JavaScript Bundle Test</h2>
+    <p>Testing if we can load your application's JavaScript bundle...</p>
+    
+    <div id="bundle-test">Testing...</div>
+    
+    <script>
+      function testBundle() {
+        const bundleTest = document.getElementById('bundle-test');
+        
+        // Create a script element to try loading the main bundle
+        const script = document.createElement('script');
+        script.src = '/static/js/main.c8a0d6c9.js'; // From your build output
+        
+        // Set a timeout in case the script never loads
+        const timeout = setTimeout(() => {
+          bundleTest.innerHTML = '<span class="failure">FAILED: Bundle loading timed out</span>';
+        }, 5000);
+        
+        // Success handler
+        script.onload = () => {
+          clearTimeout(timeout);
+          bundleTest.innerHTML = '<span class="success">SUCCESS: Bundle loaded correctly</span>';
+          
+          // Wait a moment and then check if React and ReactDOM are available
+          setTimeout(() => {
+            if (window.React) {
+              bundleTest.innerHTML += '<br><span class="success">React is available in the global scope</span>';
+            } else {
+              bundleTest.innerHTML += '<br><span class="failure">React is NOT available in the global scope</span>';
+            }
+          }, 500);
+        };
+        
+        // Error handler
+        script.onerror = () => {
+          clearTimeout(timeout);
+          bundleTest.innerHTML = '<span class="failure">FAILED: Could not load bundle</span>';
+        };
+        
+        // Add the script to the document
+        document.body.appendChild(script);
+      }
+      
+      // Run the test
+      setTimeout(testBundle, 1000);
+    </script>
+  </div>
+  
+  <div class="card">
+    <h2>Environment Detection</h2>
+    <div id="env-info"></div>
+    
+    <script>
+      const envInfo = document.getElementById('env-info');
+      
+      // Get basic environment information
+      const info = {
+        'User Agent': navigator.userAgent,
+        'Window Size': `${window.innerWidth}x${window.innerHeight}`,
+        'Document Base URL': document.baseURI,
+        'Current URL': window.location.href,
+        'Protocol': window.location.protocol,
+        'Host': window.location.host
+      };
+      
+      // Output the information
+      let infoHTML = '';
+      for (const [key, value] of Object.entries(info)) {
+        infoHTML += `<p><strong>${key}:</strong> ${value}</p>`;
+      }
+      
+      envInfo.innerHTML = infoHTML;
+    </script>
+  </div>
+  
+  <div class="card">
+    <h2>Network Test</h2>
+    <p>Testing connectivity to critical resources...</p>
+    
+    <div id="network-test">Testing...</div>
+    
+    <script>
+      async function testNetwork() {
+        const networkTest = document.getElementById('network-test');
+        
+        try {
+          // Test connectivity to main domain
+          const domainResponse = await fetch(window.location.origin, { method: 'HEAD' });
+          const domainStatus = domainResponse.ok ? 'success' : 'failure';
+          
+          // Test connectivity to backend API
+          const apiUrl = 'https://tedlist-backend.onrender.com/health';
+          let apiStatus = 'untested';
+          let apiDetails = '';
+          
+          try {
+            const apiResponse = await fetch(apiUrl);
+            apiStatus = apiResponse.ok ? 'success' : 'failure';
+            const apiData = await apiResponse.json();
+            apiDetails = `: ${JSON.stringify(apiData)}`;
+          } catch (apiError) {
+            apiStatus = 'failure';
+            apiDetails = `: ${apiError.message}`;
+          }
+          
+          // Output the results
+          networkTest.innerHTML = `
+            <p><strong>Main Domain:</strong> <span class="${domainStatus}">${domainStatus.toUpperCase()}</span></p>
+            <p><strong>Backend API:</strong> <span class="${apiStatus}">${apiStatus.toUpperCase()}</span>${apiDetails}</p>
+          `;
+        } catch (error) {
+          networkTest.innerHTML = `<p class="failure">Error running network tests: ${error.message}</p>`;
+        }
+      }
+      
+      // Run the test
+      testNetwork();
+    </script>
+  </div>
+  
+  <div class="card">
+    <h2>CORS Test</h2>
+    <p>Testing if CORS issues might be affecting your app:</p>
+    
+    <div id="cors-test">Testing...</div>
+    
+    <script>
+      async function testCORS() {
+        const corsTest = document.getElementById('cors-test');
+        
+        try {
+          const apiUrl = 'https://tedlist-backend.onrender.com/health';
+          const response = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            corsTest.innerHTML = '<span class="success">SUCCESS: No CORS issues detected with backend API</span>';
+          } else {
+            corsTest.innerHTML = `<span class="failure">API returned error: ${response.status} ${response.statusText}</span>`;
+          }
+        } catch (error) {
+          corsTest.innerHTML = `<span class="failure">CORS Error: ${error.message}</span>`;
+        }
+      }
+      
+      // Run the test
+      testCORS();
+    </script>
+  </div>
+  
+  <div class="card">
+    <h2>Recommendations</h2>
+    <p>After all tests complete, check for any failures above.</p>
+    <ul>
+      <li>If the JavaScript bundle failed to load, check your Render.com deployment settings</li>
+      <li>If CORS tests failed, check your API server's CORS configuration</li>
+      <li>Check your browser console (F12) for specific error messages</li>
+      <li>Consider adding "homepage": "." to your package.json file</li>
+    </ul>
+  </div>
+</body>
+</html>
