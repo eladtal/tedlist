@@ -4,7 +4,9 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
+// Import both Apps but use MinimalApp for now
 import App from './App';
+import MinimalApp from './MinimalApp';
 import reportWebVitals from './reportWebVitals';
 
 // Simple CSS to ensure the page isn't blank
@@ -92,10 +94,12 @@ try {
   console.log('Creating React root...');
   const root = createRoot(container);
   
-  console.log('Rendering actual app...');
+  console.log('Rendering minimal app instead of full app to resolve loading issues...');
+  
+  // Use MinimalApp instead of App to bypass loading issues
   root.render(
     <React.StrictMode>
-      <App />
+      <MinimalApp />
     </React.StrictMode>
   );
   
