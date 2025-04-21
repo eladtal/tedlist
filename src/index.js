@@ -94,12 +94,10 @@ try {
   console.log('Creating React root...');
   const root = createRoot(container);
   
-  console.log('Rendering minimal app instead of full app to resolve loading issues...');
-  
-  // Use MinimalApp instead of App to bypass loading issues
+  console.log('Rendering full app with feature flags...');
   root.render(
     <React.StrictMode>
-      <MinimalApp />
+      <App />
     </React.StrictMode>
   );
   

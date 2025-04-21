@@ -29,6 +29,21 @@ import { TradeInteractionProvider } from './contexts/TradeInteractionContext';
 import { AdminProvider } from './contexts/AdminContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import { PointsProvider } from './contexts/PointsContext';
+import MinimalApp from './MinimalApp';
+
+// FEATURE FLAGS - Enable these one by one to find the source of loading issues
+const FEATURES = {
+  USE_AUTH: true,            // Authentication provider
+  USE_NOTIFICATIONS: false,  // Notification provider
+  USE_ADMIN: false,          // Admin provider
+  USE_TRADE: false,          // Trade interaction provider
+  USE_POINTS: false,         // Points provider
+  USE_ONBOARDING: false,     // Onboarding provider
+  USE_FULL_ROUTES: false,    // All routes or just minimal ones
+  
+  // Debug mode will show provider loading state on screen
+  DEBUG_MODE: true
+};
 
 // Add a loading timeout for safety
 const LoadingTimeout = ({ children }) => {
@@ -138,16 +153,41 @@ const PrivateRoute = ({ children }) => {
 
 // Admin Route component to protect admin routes
 const AdminRoute = ({ children }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const location = useLocation();
   
-  // In a real app, we would check if the user is an admin here
-  // For now, we'll just check if they're authenticated
-  if (!currentUser) {
+  if (!currentUser || !isAdmin) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   return children;
+};
+
+// Debug provider to track loading state of a provider
+const DebugProvider = ({ name, loading, children }) => {
+  if (!FEATURES.DEBUG_MODE) return children;
+  
+  return (
+    <div style={{ position: 'relative' }}>
+      {loading && (
+        <div style={{
+          position: 'fixed',
+          bottom: '10px',
+          left: '10px',
+          backgroundColor: '#f8d7da',
+          color: '#721c24',
+          padding: '5px 10px',
+          borderRadius: '4px',
+          zIndex: 9999,
+          fontSize: '12px',
+          opacity: 0.9
+        }}>
+          {name} is still loading...
+        </div>
+      )}
+      {children}
+    </div>
+  );
 };
 
 // This wrapper is needed to access location for conditional navbar rendering
@@ -155,147 +195,75 @@ const AppContent = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
   
-  // Check if the current route is the homepage
-  const isHomePage = location.pathname === '/';
-  // Check if we're in a chat - don't show navbar in chat screens
-  const isChatScreen = location.pathname.includes('/messages/');
-  // Check if we're in share screen - don't show navbar
-  const isShareScreen = location.pathname.includes('/share/');
-  // Check if we're on auth screens
-  const isAuthScreen = location.pathname === '/login' || location.pathname === '/signup';
-  
-  // Don't show navbar on auth screens or if user is not logged in
-  const showNavbar = !isHomePage && !isChatScreen && !isShareScreen && !isAuthScreen && currentUser;
+  // Routes that don't need a navbar
+  const noNavbarRoutes = ['/login', '/signup', '/onboarding'];
+  const shouldShowNavbar = !noNavbarRoutes.includes(location.pathname);
   
   return (
-    <AppContainer>
+    <>
+      {shouldShowNavbar && <Navbar />}
+      
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginScreen />} />
         <Route path="/signup" element={<SignupScreen />} />
         
-        {/* Protected routes */}
-        <Route 
-          path="/" 
-          element={
-            currentUser ? <HomeScreen /> : <Navigate to="/login" />
-          } 
-        />
-        <Route 
-          path="/swipe" 
-          element={
-            <PrivateRoute>
-              <SwipeScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/swipe-history" 
-          element={
-            <PrivateRoute>
-              <SwipeHistoryScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/items/:id" 
-          element={
-            <PrivateRoute>
-              <ItemDetailScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/upload" 
-          element={
-            <PrivateRoute>
-              <UploadScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/profile" 
-          element={
-            <PrivateRoute>
-              <ProfileScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/messages" 
-          element={
-            <PrivateRoute>
-              <MessageScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/messages/:id" 
-          element={
-            <PrivateRoute>
-              <ChatScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/trade" 
-          element={
-            <PrivateRoute>
-              <TradePage />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/trade/swipe/:itemId" 
-          element={
-            <PrivateRoute>
-              <TradeSwipe />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/notifications" 
-          element={
-            <PrivateRoute>
-              <NotificationsScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/onboarding" 
-          element={
-            <PrivateRoute>
-              <OnboardingScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/share/:id" 
-          element={
-            <PrivateRoute>
-              <ShareScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/share" 
-          element={
-            <PrivateRoute>
-              <ShareScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/admin" 
-          element={
-            <AdminRoute>
-              <AdminScreen />
-            </AdminRoute>
-          } 
-        />
+        {/* Full routes or minimal routes based on feature flag */}
+        {FEATURES.USE_FULL_ROUTES ? (
+          <>
+            {/* Protected routes - require authentication */}
+            <Route path="/" element={<PrivateRoute><HomeScreen /></PrivateRoute>} />
+            <Route path="/swipe" element={<PrivateRoute><SwipeScreen /></PrivateRoute>} />
+            <Route path="/swipe/history" element={<PrivateRoute><SwipeHistoryScreen /></PrivateRoute>} />
+            <Route path="/item/:id" element={<PrivateRoute><ItemDetailScreen /></PrivateRoute>} />
+            <Route path="/upload" element={<PrivateRoute><UploadScreen /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><ProfileScreen /></PrivateRoute>} />
+            <Route path="/profile/:id" element={<PrivateRoute><ProfileScreen /></PrivateRoute>} />
+            <Route path="/messages" element={<PrivateRoute><MessagesScreen /></PrivateRoute>} />
+            <Route path="/messages/:id" element={<PrivateRoute><ChatScreen /></PrivateRoute>} />
+            <Route path="/trade/:id" element={<PrivateRoute><TradePage /></PrivateRoute>} />
+            <Route path="/trade-swipe" element={<PrivateRoute><TradeSwipe /></PrivateRoute>} />
+            <Route path="/share/:id" element={<PrivateRoute><ShareScreen /></PrivateRoute>} />
+            <Route path="/notifications" element={<PrivateRoute><NotificationsScreen /></PrivateRoute>} />
+            <Route path="/onboarding" element={<PrivateRoute><OnboardingScreen /></PrivateRoute>} />
+            
+            {/* Admin routes */}
+            <Route path="/admin" element={<AdminRoute><AdminScreen /></AdminRoute>} />
+          </>
+        ) : (
+          /* Minimal routes when debugging */
+          <>
+            <Route path="/" element={
+              <div style={{ padding: '20px', marginTop: '80px' }}>
+                <h1>Tedlist Marketplace</h1>
+                <p>This is a reduced functionality version for debugging.</p>
+                <p>Feature flags: {JSON.stringify(FEATURES, null, 2)}</p>
+                {currentUser ? (
+                  <div style={{ marginTop: '20px' }}>
+                    <h2>Welcome, {currentUser.displayName || currentUser.email}</h2>
+                    <p>User is authenticated.</p>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: '20px' }}>
+                    <h2>Not logged in</h2>
+                    <p>Please <a href="/login">login</a> to see more content.</p>
+                  </div>
+                )}
+              </div>
+            } />
+            <Route path="/minimal" element={<MinimalApp />} />
+          </>
+        )}
+        
+        {/* Fallback route - will work even if providers fail */}
+        <Route path="/minimal" element={<MinimalApp />} />
+        
+        {/* Catch-all route - redirect to home or login based on auth status */}
+        <Route path="*" element={
+          currentUser ? <Navigate to="/" replace /> : <Navigate to="/login" replace />
+        } />
       </Routes>
-      {showNavbar && <Navbar />}
-    </AppContainer>
+    </>
   );
 };
 
@@ -311,14 +279,52 @@ const AppContainer = styled.div`
   }
 `;
 
+// Function to wrap content with appropriate providers based on feature flags
+const withProviders = (children) => {
+  let result = children;
+  
+  // Each provider layer is only added if the feature flag is enabled
+  if (FEATURES.USE_ONBOARDING) {
+    result = <OnboardingProvider>{result}</OnboardingProvider>;
+  }
+  
+  if (FEATURES.USE_POINTS) {
+    result = <PointsProvider>{result}</PointsProvider>;
+  }
+  
+  if (FEATURES.USE_TRADE) {
+    result = <TradeInteractionProvider>{result}</TradeInteractionProvider>;
+  }
+  
+  if (FEATURES.USE_ADMIN) {
+    result = <AdminProvider>{result}</AdminProvider>;
+  }
+  
+  if (FEATURES.USE_NOTIFICATIONS) {
+    result = <NotificationProvider>{result}</NotificationProvider>;
+  }
+  
+  if (FEATURES.USE_AUTH) {
+    result = <AuthProvider>{result}</AuthProvider>;
+  }
+  
+  return result;
+};
+
 const App = () => {
   const [appReady, setAppReady] = useState(false);
+  const [providerLoading, setProviderLoading] = useState(true);
   
   // Add a safety timeout to ensure the app loads eventually
   useEffect(() => {
     // Mark app as ready after a short delay
     const timer = setTimeout(() => {
       setAppReady(true);
+      
+      // After 2 seconds, assume providers have loaded (or failed)
+      setTimeout(() => {
+        setProviderLoading(false);
+      }, 2000);
     }, 500);
     
     return () => clearTimeout(timer);
@@ -330,52 +336,44 @@ const App = () => {
         <GlobalStyles />
         <ErrorBoundary>
           <LoadingTimeout>
-            <AuthProvider>
-              <NotificationProvider>
-                <AdminProvider>
-                  <TradeInteractionProvider>
-                    <PointsProvider>
-                      <OnboardingProvider>
-                        <Router>
-                          {appReady ? (
-                            <ErrorBoundary>
-                              <AppContent />
-                            </ErrorBoundary>
-                          ) : (
-                            <div style={{ 
-                              display: 'flex', 
-                              justifyContent: 'center', 
-                              alignItems: 'center', 
-                              height: '100vh' 
-                            }}>
-                              <div style={{ textAlign: 'center' }}>
-                                <div style={{ 
-                                  width: '50px', 
-                                  height: '50px', 
-                                  border: '5px solid #f3f3f3',
-                                  borderTop: '5px solid #6A5ACD',
-                                  borderRadius: '50%',
-                                  margin: '0 auto 20px',
-                                  animation: 'spin 1s linear infinite'
-                                }}></div>
-                                <h2>Loading Tedlist Marketplace</h2>
-                                <p>Please wait while we prepare your experience...</p>
-                                <style>{`
-                                  @keyframes spin {
-                                    0% { transform: rotate(0deg); }
-                                    100% { transform: rotate(360deg); }
-                                  }
-                                `}</style>
-                              </div>
-                            </div>
-                          )}
-                        </Router>
-                      </OnboardingProvider>
-                    </PointsProvider>
-                  </TradeInteractionProvider>
-                </AdminProvider>
-              </NotificationProvider>
-            </AuthProvider>
+            <DebugProvider name="All Providers" loading={providerLoading}>
+              {withProviders(
+                <Router>
+                  {appReady ? (
+                    <ErrorBoundary>
+                      <AppContent />
+                    </ErrorBoundary>
+                  ) : (
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'center', 
+                      alignItems: 'center', 
+                      height: '100vh' 
+                    }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ 
+                          width: '50px', 
+                          height: '50px', 
+                          border: '5px solid #f3f3f3',
+                          borderTop: '5px solid #6A5ACD',
+                          borderRadius: '50%',
+                          margin: '0 auto 20px',
+                          animation: 'spin 1s linear infinite'
+                        }}></div>
+                        <h2>Loading Tedlist Marketplace</h2>
+                        <p>Please wait while we prepare your experience...</p>
+                        <style>{`
+                          @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                          }
+                        `}</style>
+                      </div>
+                    </div>
+                  )}
+                </Router>
+              )}
+            </DebugProvider>
           </LoadingTimeout>
         </ErrorBoundary>
       </ThemeProvider>
