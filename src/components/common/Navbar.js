@@ -171,10 +171,26 @@ const IconWrapper = styled.div`
 const Navbar = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
-  const { isAdmin } = useAdmin();
-  const { getUnreadCount } = useNotifications();
   
-  const unreadNotifications = getUnreadCount ? getUnreadCount() : 0;
+  // Get notifications from context (if available)
+  let hasNotifications = false;
+  try {
+    const { getUnreadCount } = useNotifications();
+    hasNotifications = getUnreadCount ? getUnreadCount() > 0 : false;
+  } catch (error) {
+    console.warn('Notification context not available:', error);
+  }
+  
+  // Get admin status safely
+  let isAdmin = false;
+  try {
+    const adminContext = useAdmin();
+    isAdmin = adminContext?.isAdmin || false;
+  } catch (error) {
+    console.warn('Admin context not available:', error);
+  }
+
+  const unreadNotifications = hasNotifications ? getUnreadCount() : 0;
   
   return (
     <NavContainer>
