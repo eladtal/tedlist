@@ -25,17 +25,32 @@ export const AuthProvider = ({ children }) => {
       try {
         if (isLoggedIn()) {
           // Token exists, fetch current user data
-          const response = await getCurrentUser();
-          if (response.success && response.data) {
-            setCurrentUser(response.data);
+          try {
+            const response = await getCurrentUser();
+            if (response.success && response.data) {
+              setCurrentUser(response.data);
+            }
+          } catch (error) {
+            console.error('Error loading user data:', error);
+            // If there's an error with the token, remove it
+            localStorage.removeItem('tedlist_token');
           }
         }
       } catch (error) {
-        console.error('Error loading user data:', error);
-        // If there's an error with the token, remove it
-        localStorage.removeItem('tedlist_token');
+        console.error('Error checking login status:', error);
       } finally {
+        // Always set loading to false, even if errors occur
         setLoading(false);
+        
+        // Safety timeout to ensure loading is resolved
+        const safetyTimeout = setTimeout(() => {
+          if (loading) {
+            console.warn('Auth loading state not resolved after timeout, forcing resolution');
+            setLoading(false);
+          }
+        }, 5000); // 5 second safety net
+        
+        return () => clearTimeout(safetyTimeout);
       }
     };
     
