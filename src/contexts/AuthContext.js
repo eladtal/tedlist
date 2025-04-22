@@ -4,11 +4,11 @@ import {
   loginUser, 
   logoutUser, 
   getCurrentUser, 
-  isLoggedIn 
+  updatePassword
 } from '../services/auth.service';
 
-// Create context
-export const AuthContext = createContext();
+// Create the auth context
+const AuthContext = createContext();
 
 // Create a custom hook to use the auth context
 export const useAuth = () => {
@@ -19,47 +19,97 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   
+  // Function to set current user data
+  const setUserData = (userData, token) => {
+    setCurrentUser(userData);
+    if (token) {
+      localStorage.setItem('tedlistAuthToken', token);
+    }
+    // Also store user data for development mode
+    localStorage.setItem('tedlistUser', JSON.stringify(userData));
+  };
+  
+  // Function to clear user data on logout
+  const clearUserData = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('tedlistAuthToken');
+    localStorage.removeItem('tedlistUser');
+  };
+
   // Check if user is already logged in (using token)
   useEffect(() => {
+    // Force loading state to complete after a very short delay
+    // This ensures the app never stays stuck in loading state
+    const forceComplete = setTimeout(() => {
+      if (loading) {
+        console.log('Auth context: Forcing loading completion');
+        setLoading(false);
+      }
+    }, 1000); // Just 1 second to avoid hanging
+    
     const checkLoggedInUser = async () => {
       try {
-        if (isLoggedIn()) {
-          // Token exists, fetch current user data
-          try {
-            const response = await getCurrentUser();
-            if (response.success && response.data) {
-              setCurrentUser(response.data);
+        // Development mode - simplified login check
+        if (process.env.NODE_ENV === 'development') {
+          // Try to get user from localStorage
+          const savedUser = localStorage.getItem('tedlistUser');
+          
+          if (savedUser) {
+            try {
+              const userData = JSON.parse(savedUser);
+              setCurrentUser(userData);
+            } catch (error) {
+              console.warn('Error parsing saved user:', error);
             }
-          } catch (error) {
-            console.error('Error loading user data:', error);
-            // If there's an error with the token, remove it
-            localStorage.removeItem('tedlist_token');
           }
+          
+          // End loading state
+          setLoading(false);
+          return;
+        }
+        
+        // Production mode - proper API check
+        try {
+          const response = await getCurrentUser();
+          if (response.success && response.data) {
+            setUserData(response.data, response.token);
+          }
+        } catch (error) {
+          console.error('Error loading user data:', error);
+          localStorage.removeItem('tedlistAuthToken');
         }
       } catch (error) {
-        console.error('Error checking login status:', error);
+        console.error('Error in auth check:', error);
       } finally {
-        // Always set loading to false, even if errors occur
+        // Always set loading to false to avoid infinite loading
         setLoading(false);
-        
-        // Safety timeout to ensure loading is resolved
-        const safetyTimeout = setTimeout(() => {
-          if (loading) {
-            console.warn('Auth loading state not resolved after timeout, forcing resolution');
-            setLoading(false);
-          }
-        }, 5000); // 5 second safety net
-        
-        return () => clearTimeout(safetyTimeout);
       }
     };
     
     checkLoggedInUser();
+    
+    return () => clearTimeout(forceComplete);
   }, []);
   
   // Sign up function
   const signup = async (email, password, username, profileImage = null) => {
     try {
+      // Development mode - simplified signup
+      if (process.env.NODE_ENV === 'development') {
+        const userData = {
+          id: 'dev-' + Date.now(),
+          email,
+          username,
+          profileImage: profileImage || 'https://randomuser.me/api/portraits/lego/1.jpg',
+          createdAt: new Date().toISOString()
+        };
+        
+        const token = 'dev-token-' + Date.now();
+        setUserData(userData, token);
+        
+        return userData;
+      }
+      
       // Use the API service to register user
       const userData = {
         email,
@@ -72,7 +122,7 @@ export const AuthProvider = ({ children }) => {
       
       // If successful, set current user
       if (response.success && response.user) {
-        setCurrentUser(response.user);
+        setUserData(response.user, response.token);
       }
       
       return response.user;
@@ -85,12 +135,28 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = async (email, password) => {
     try {
+      // Development mode - simplified login
+      if (process.env.NODE_ENV === 'development') {
+        const userData = {
+          id: 'dev-' + Date.now(),
+          email,
+          username: email.split('@')[0],
+          profileImage: 'https://randomuser.me/api/portraits/lego/1.jpg',
+          createdAt: new Date().toISOString()
+        };
+        
+        const token = 'dev-token-' + Date.now();
+        setUserData(userData, token);
+        
+        return userData;
+      }
+      
       // Use the API service to login
       const response = await loginUser({ email, password });
       
       // If successful, set current user
       if (response.success && response.user) {
-        setCurrentUser(response.user);
+        setUserData(response.user, response.token);
       }
       
       return response.user;
@@ -104,53 +170,50 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     // Use the API service to logout
     logoutUser();
-    setCurrentUser(null);
+    clearUserData();
   };
   
   // Update profile function
   const updateProfile = async (profileData) => {
+    if (!currentUser) return null;
+    
     try {
-      // In a real app with API, we'd make an API call here
-      // For now, update locally but prepare for future API integration
-      const api = await import('../services/api').then(module => module.default);
+      if (process.env.NODE_ENV === 'development') {
+        // In development, just update the local user data
+        const updatedUser = { ...currentUser, ...profileData };
+        setUserData(updatedUser);
+        return updatedUser;
+      }
       
       try {
-        // Try to update via API if available
-        const response = await api.put('/users/profile', profileData);
-        if (response.data.success) {
-          setCurrentUser(response.data.user);
-          return response.data.user;
+        // Try to update via API using our apiService
+        const apiService = await import('../services/api').then(module => module.default);
+        const response = await apiService.users.updateProfile(profileData);
+        if (response.success) {
+          setUserData(response.user, response.token);
+          return response.user;
         }
       } catch (apiError) {
-        console.log('API not yet available, falling back to localStorage', apiError);
+        console.warn('API update failed, using local fallback:', apiError);
         
-        // Fallback to localStorage for now
-        if (currentUser) {
-          const updatedUser = { ...currentUser, ...profileData };
-          
-          // Update current user state
-          setCurrentUser(updatedUser);
-          
-          // Update in localStorage too (legacy support)
-          localStorage.setItem('tedlistUser', JSON.stringify(updatedUser));
-          
-          // Update in users list (legacy support)
-          const existingUsers = JSON.parse(localStorage.getItem('tedlistUsers') || '[]');
-          const updatedUsers = existingUsers.map(user => 
-            user.id === currentUser.id ? { ...user, ...profileData } : user
-          );
-          localStorage.setItem('tedlistUsers', JSON.stringify(updatedUsers));
-          
-          return updatedUser;
-        }
+        // Fallback to local update
+        const updatedUser = { ...currentUser, ...profileData };
+        
+        // Update current user state
+        setUserData(updatedUser);
+        
+        // Update in localStorage too (legacy support)
+        localStorage.setItem('tedlistUser', JSON.stringify(updatedUser));
+        
+        return updatedUser;
       }
     } catch (error) {
-      console.error('Update profile error:', error);
+      console.error('Profile update error:', error);
       throw error;
     }
   };
   
-  // Context value
+  // Export all the functions and state
   const value = {
     currentUser,
     signup,
@@ -158,13 +221,15 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     loading,
-    // Add isAdmin property to prevent "Cannot destructure property 'isAdmin'" error
+    setCurrentUser, // Add direct setter for development tools
     isAdmin: currentUser && currentUser.email === 'admin@example.com'
   };
   
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
+
+export default AuthProvider;

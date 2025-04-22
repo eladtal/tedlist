@@ -124,7 +124,7 @@ const StyledLink = styled(Link)`
 
 const LoginScreen = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, setCurrentUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -219,6 +219,37 @@ const LoginScreen = () => {
         <Button type="submit" disabled={loading}>
           {loading ? 'Logging in...' : 'Log In'}
         </Button>
+        
+        {process.env.NODE_ENV === 'development' && (
+          <Button 
+            type="button" 
+            onClick={() => {
+              // Create mock user data
+              const mockUser = {
+                id: 'dev-user-123',
+                email: 'dev@example.com',
+                username: 'DevUser',
+                profileImage: 'https://randomuser.me/api/portraits/lego/1.jpg'
+              };
+              
+              // Create mock token
+              const mockToken = 'dev-token-' + Date.now();
+              
+              // Store in localStorage
+              localStorage.setItem('tedlistAuthToken', mockToken);
+              localStorage.setItem('tedlistUser', JSON.stringify(mockUser));
+              
+              // Update auth context
+              setCurrentUser(mockUser);
+              
+              // Redirect to home
+              navigate('/');
+            }}
+            style={{ backgroundColor: '#FF9800', marginTop: '10px' }}
+          >
+            Dev Mode: Instant Login
+          </Button>
+        )}
         
         <LinkContainer>
           <p>Don't have an account? <StyledLink to="/signup">Sign up</StyledLink></p>

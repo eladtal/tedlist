@@ -33,13 +33,17 @@ import MinimalApp from './MinimalApp';
 
 // FEATURE FLAGS - Enable these one by one to find the source of loading issues
 const FEATURES = {
-  USE_AUTH: true,            // Authentication provider
-  USE_NOTIFICATIONS: false,  // Notification provider
-  USE_ADMIN: false,          // Admin provider
-  USE_TRADE: false,          // Trade interaction provider
-  USE_POINTS: false,         // Points provider
-  USE_ONBOARDING: false,     // Onboarding provider
-  USE_FULL_ROUTES: false,    // All routes or just minimal ones
+  USE_AUTH: false,            // Authentication provider
+  USE_NOTIFICATIONS: false,   // Notification provider
+  USE_ADMIN: false,           // Admin provider
+  USE_TRADE: false,           // Trade interaction provider
+  USE_POINTS: false,          // Points provider
+  USE_ONBOARDING: false,      // Onboarding provider
+  USE_FULL_ROUTES: false,     // All routes or just minimal ones
+  
+  // Development mode flags
+  DEV_MODE: process.env.NODE_ENV === 'development',      // Enable development mode features
+  DEV_BYPASS_AUTH: process.env.NODE_ENV === 'development', // Skip authentication in development
   
   // Debug mode will show provider loading state on screen
   DEBUG_MODE: true
@@ -54,7 +58,7 @@ const LoadingTimeout = ({ children }) => {
     const timeout = setTimeout(() => {
       console.warn('Application render timeout triggered');
       setShowTimeout(true);
-    }, 10000); // 10 seconds
+    }, 30000); // 30 seconds
     
     return () => clearTimeout(timeout);
   }, []);
@@ -107,19 +111,27 @@ const PrivateRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
   const location = useLocation();
   
-  // Add a safeguard against endless loading
+  // Always declare state variables unconditionally
   const [forceAuth, setForceAuth] = useState(false);
   
+  // Always call useEffect unconditionally
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (loading) {
+    // Only set the timer if we're loading and not in dev bypass mode
+    if (loading && !(FEATURES.DEV_BYPASS_AUTH && process.env.NODE_ENV === 'development')) {
+      const timer = setTimeout(() => {
         console.warn('Auth still loading after timeout, forcing decision');
         setForceAuth(true);
-      }
-    }, 5000); // 5 second safety net
-    
-    return () => clearTimeout(timer);
+      }, 5000); // 5 second safety net
+      
+      return () => clearTimeout(timer);
+    }
   }, [loading]);
+  
+  // Development mode bypass - moved after hooks
+  if (FEATURES.DEV_BYPASS_AUTH && process.env.NODE_ENV === 'development') {
+    console.log('DEV MODE: Bypassing authentication check');
+    return children;
+  }
   
   // If still loading and not past timeout, show loading
   if (loading && !forceAuth) {
@@ -155,8 +167,14 @@ const PrivateRoute = ({ children }) => {
 const AdminRoute = ({ children }) => {
   // Get auth context without destructuring isAdmin
   const authContext = useAuth();
-  const adminContext = useAdmin ? useAdmin() : { isAdmin: false };
+  const adminContext = useAdmin();
   const location = useLocation();
+  
+  // Development mode bypass
+  if (FEATURES.DEV_BYPASS_AUTH && process.env.NODE_ENV === 'development') {
+    console.log('DEV MODE: Bypassing admin authentication check');
+    return children;
+  }
   
   // Safe access to currentUser
   const currentUser = authContext?.currentUser;
@@ -281,10 +299,8 @@ const AppContent = () => {
         {/* Fallback route - will work even if providers fail */}
         <Route path="/minimal" element={<MinimalApp />} />
         
-        {/* Catch-all route - redirect to home or login based on auth status */}
-        <Route path="*" element={
-          currentUser ? <Navigate to="/" replace /> : <Navigate to="/login" replace />
-        } />
+        {/* Catch-all route - always render MinimalApp */}
+        <Route path="*" element={<MinimalApp />} />
       </Routes>
     </>
   );
@@ -335,23 +351,21 @@ const withProviders = (children) => {
 };
 
 const App = () => {
-  const [appReady, setAppReady] = useState(false);
-  const [providerLoading, setProviderLoading] = useState(true);
+  const [appReady, setAppReady] = useState(true);
+  const [providerLoading, setProviderLoading] = useState(false);
   
-  // Add a safety timeout to ensure the app loads eventually
+  // Force app ready after a very short timeout
   useEffect(() => {
-    // Mark app as ready after a short delay
-    const timer = setTimeout(() => {
+    if (!appReady) {
+      // Mark app as ready immediately
       setAppReady(true);
-      
-      // After 2 seconds, assume providers have loaded (or failed)
-      setTimeout(() => {
-        setProviderLoading(false);
-      }, 2000);
-    }, 500);
+    }
     
-    return () => clearTimeout(timer);
-  }, []);
+    // Force providers to be considered loaded
+    if (providerLoading) {
+      setProviderLoading(false);
+    }
+  }, [appReady, providerLoading]);
   
   return (
     <AppContainer>
@@ -362,38 +376,9 @@ const App = () => {
             <DebugProvider name="All Providers" loading={providerLoading}>
               {withProviders(
                 <Router>
-                  {appReady ? (
-                    <ErrorBoundary>
-                      <AppContent />
-                    </ErrorBoundary>
-                  ) : (
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'center', 
-                      alignItems: 'center', 
-                      height: '100vh' 
-                    }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ 
-                          width: '50px', 
-                          height: '50px', 
-                          border: '5px solid #f3f3f3',
-                          borderTop: '5px solid #6A5ACD',
-                          borderRadius: '50%',
-                          margin: '0 auto 20px',
-                          animation: 'spin 1s linear infinite'
-                        }}></div>
-                        <h2>Loading Tedlist Marketplace</h2>
-                        <p>Please wait while we prepare your experience...</p>
-                        <style>{`
-                          @keyframes spin {
-                            0% { transform: rotate(0deg); }
-                            100% { transform: rotate(360deg); }
-                          }
-                        `}</style>
-                      </div>
-                    </div>
-                  )}
+                  <ErrorBoundary>
+                    <AppContent />
+                  </ErrorBoundary>
                 </Router>
               )}
             </DebugProvider>

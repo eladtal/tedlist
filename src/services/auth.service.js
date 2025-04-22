@@ -1,4 +1,4 @@
-import api from './api';
+import apiService from './api';
 
 /**
  * Register a new user
@@ -10,16 +10,48 @@ import api from './api';
  */
 export const registerUser = async (userData) => {
   try {
-    const response = await api.post('/auth/register', userData);
-    
-    // Store token in localStorage
-    if (response.data.token) {
-      localStorage.setItem('tedlist_token', response.data.token);
+    // Use our local mock if backend is not available in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Using local mock for registration in development mode');
+      // Simulate a successful registration with mock data
+      const mockResponse = {
+        success: true,
+        user: {
+          id: 'local_' + Date.now(),
+          email: userData.email,
+          username: userData.username,
+          profileImage: userData.profileImage || 'https://randomuser.me/api/portraits/lego/1.jpg',
+          createdAt: new Date().toISOString()
+        },
+        token: 'mock_token_' + Date.now()
+      };
+      
+      // Store token in localStorage
+      localStorage.setItem('tedlistAuthToken', mockResponse.token);
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return mockResponse;
     }
     
-    return response.data;
+    // Otherwise use the real API
+    const response = await apiService.auth.register(userData);
+    
+    // Store token in localStorage
+    if (response.token) {
+      localStorage.setItem('tedlistAuthToken', response.token);
+    }
+    
+    return response;
   } catch (error) {
-    throw error.response?.data || error;
+    console.error('Registration error:', error);
+    // Return a structured error response
+    return {
+      success: false,
+      message: error.message || 'Registration failed. Please try again.',
+      error
+    };
   }
 };
 
@@ -32,16 +64,48 @@ export const registerUser = async (userData) => {
  */
 export const loginUser = async (credentials) => {
   try {
-    const response = await api.post('/auth/login', credentials);
-    
-    // Store token in localStorage
-    if (response.data.token) {
-      localStorage.setItem('tedlist_token', response.data.token);
+    // Use our local mock if backend is not available in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Using local mock for login in development mode');
+      // Simulate a successful login with mock data
+      const mockResponse = {
+        success: true,
+        user: {
+          id: 'local_user',
+          email: credentials.email,
+          username: credentials.email.split('@')[0],
+          profileImage: 'https://randomuser.me/api/portraits/lego/1.jpg',
+          createdAt: new Date().toISOString()
+        },
+        token: 'mock_token_' + Date.now()
+      };
+      
+      // Store token in localStorage
+      localStorage.setItem('tedlistAuthToken', mockResponse.token);
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return mockResponse;
     }
     
-    return response.data;
+    // Otherwise use the real API
+    const response = await apiService.auth.login(credentials);
+    
+    // Store token in localStorage
+    if (response.token) {
+      localStorage.setItem('tedlistAuthToken', response.token);
+    }
+    
+    return response;
   } catch (error) {
-    throw error.response?.data || error;
+    console.error('Login error:', error);
+    // Return a structured error response
+    return {
+      success: false,
+      message: error.message || 'Login failed. Please check your credentials and try again.',
+      error
+    };
   }
 };
 
@@ -51,10 +115,44 @@ export const loginUser = async (credentials) => {
  */
 export const getCurrentUser = async () => {
   try {
-    const response = await api.get('/auth/me');
-    return response.data;
+    // If no token exists, user is not logged in
+    const token = localStorage.getItem('tedlistAuthToken');
+    if (!token) {
+      return { success: false, message: 'No authentication token found' };
+    }
+    
+    // Use our local mock if backend is not available in development
+    if (process.env.NODE_ENV === 'development') {
+      // Try to parse user from localStorage if available (for development)
+      try {
+        const userData = localStorage.getItem('tedlistUser');
+        if (userData) {
+          const user = JSON.parse(userData);
+          return { success: true, data: user };
+        }
+      } catch (e) {
+        console.warn('Failed to parse local user data:', e);
+      }
+      
+      // Generate mock user if none found
+      return {
+        success: true,
+        data: {
+          id: 'local_user',
+          email: 'user@example.com',
+          username: 'local_user',
+          profileImage: 'https://randomuser.me/api/portraits/lego/1.jpg',
+          createdAt: new Date().toISOString()
+        }
+      };
+    }
+    
+    // Otherwise use the real API
+    const response = await apiService.auth.verify();
+    return { success: true, data: response.user };
   } catch (error) {
-    throw error.response?.data || error;
+    console.error('Get current user error:', error);
+    return { success: false, message: error.message };
   }
 };
 
@@ -62,7 +160,8 @@ export const getCurrentUser = async () => {
  * Log out user
  */
 export const logoutUser = () => {
-  localStorage.removeItem('tedlist_token');
+  localStorage.removeItem('tedlistAuthToken');
+  localStorage.removeItem('tedlistUser'); // Also remove any user data
 };
 
 /**
@@ -74,16 +173,19 @@ export const logoutUser = () => {
  */
 export const updatePassword = async (passwordData) => {
   try {
-    const response = await api.put('/auth/update-password', passwordData);
-    
-    // Update token if returned
-    if (response.data.token) {
-      localStorage.setItem('tedlist_token', response.data.token);
+    if (process.env.NODE_ENV === 'development') {
+      // Mock successful password update
+      return { success: true, message: 'Password updated successfully' };
     }
     
-    return response.data;
+    const response = await apiService.auth.updatePassword(passwordData);
+    return response;
   } catch (error) {
-    throw error.response?.data || error;
+    console.error('Update password error:', error);
+    return { 
+      success: false, 
+      message: error.message || 'Failed to update password. Please try again.'
+    };
   }
 };
 
@@ -92,5 +194,5 @@ export const updatePassword = async (passwordData) => {
  * @returns {boolean} - True if user is logged in
  */
 export const isLoggedIn = () => {
-  return !!localStorage.getItem('tedlist_token');
+  return !!localStorage.getItem('tedlistAuthToken');
 };

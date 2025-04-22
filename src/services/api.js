@@ -1,45 +1,71 @@
-/**
- * API service using native fetch instead of axios
- */
+// API Service for Tedlist
+// Uses native fetch API for HTTP requests
 
-// Base API URL
-const API_URL = 'https://tedlist-backend.onrender.com/api';
-
-/**
- * Helper to get auth token
- */
-const getToken = () => localStorage.getItem('tedlist_token');
-
-/**
- * Basic fetch wrapper
- * @param {string} endpoint - API endpoint
- * @param {Object} options - Fetch options
- * @returns {Promise} - Response data
- */
-const fetchWrapper = async (endpoint, options = {}) => {
-  const url = `${API_URL}${endpoint}`;
-  
-  // Add auth token if available
-  const token = getToken();
-  if (token) {
-    options.headers = {
-      ...options.headers,
-      'Authorization': `Bearer ${token}`
-    };
+// Determine the base URL based on environment
+const getBaseUrl = () => {
+  // Check for explicit environment variable first
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
   }
   
-  // Add default headers
-  options.headers = {
+  // Default fallbacks based on environment
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://tedlist-backend.onrender.com';
+  } else {
+    return 'http://localhost:5000';
+  }
+};
+
+// Base URL for API requests
+const BASE_URL = getBaseUrl();
+
+// Timeout duration for requests in milliseconds
+const TIMEOUT_DURATION = 15000;
+
+// Helper function to add auth token to headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('tedlistAuthToken');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
+
+// Helper function to handle request timeouts
+const timeoutPromise = (ms) => {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(`Request timed out after ${ms}ms`));
+    }, ms);
+  });
+};
+
+// Generic fetch with error handling, retries, and timeout
+const fetchWithConfig = async (url, options = {}) => {
+  // Add authorization token if available
+  const authHeaders = getAuthHeaders();
+  
+  // Default headers
+  const headers = {
     'Content-Type': 'application/json',
-    ...options.headers
+    ...authHeaders,
+    ...options.headers,
+  };
+  
+  // Full request config
+  const config = {
+    ...options,
+    headers,
   };
   
   try {
-    const response = await fetch(url, options);
+    // Add timeout to fetch request
+    const fetchPromise = fetch(url, config);
+    const response = await Promise.race([
+      fetchPromise,
+      timeoutPromise(TIMEOUT_DURATION)
+    ]);
     
-    // Handle 401 unauthorized
+    // Handle unauthorized response
     if (response.status === 401) {
-      localStorage.removeItem('tedlist_token');
+      localStorage.removeItem('tedlistAuthToken');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
@@ -49,61 +75,165 @@ const fetchWrapper = async (endpoint, options = {}) => {
     // Parse JSON response
     const data = await response.json();
     
-    // Check for API error
+    // Handle error response
     if (!response.ok) {
-      // Create a proper Error object instead of throwing a literal
-      const error = new Error(data.message || 'API error');
-      // Attach additional information to the error object
-      error.response = { 
-        status: response.status, 
-        data 
-      };
-      throw error;
+      throw new Error(data.message || 'API request failed');
     }
     
     return data;
   } catch (error) {
+    // For network errors, implement basic retry logic
+    if (error.message.includes('network') && !options._retryCount) {
+      const retryOptions = {
+        ...options,
+        _retryCount: 1,
+      };
+      
+      console.warn('Network error, retrying request...');
+      return fetchWithConfig(url, retryOptions);
+    }
+    
     console.error('API request failed:', error);
     throw error;
   }
 };
 
-// API request methods
-const api = {
-  // GET request
-  get: (endpoint, params = {}) => {
-    // Convert params to URL query string
-    const queryString = Object.keys(params).length > 0
-      ? '?' + new URLSearchParams(params).toString()
-      : '';
+// API service methods
+const apiService = {
+  // Authentication
+  auth: {
+    register: (userData) => 
+      fetchWithConfig(`${BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      }),
+      
+    login: (credentials) => 
+      fetchWithConfig(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      }),
+      
+    verify: () => 
+      fetchWithConfig(`${BASE_URL}/api/auth/verify`, {
+        method: 'GET',
+      }),
+      
+    updateProfile: (userData) => 
+      fetchWithConfig(`${BASE_URL}/api/auth/profile`, {
+        method: 'PUT',
+        body: JSON.stringify(userData),
+      }),
+  },
+  
+  // Items
+  items: {
+    getAll: (params = {}) => {
+      const queryString = new URLSearchParams(params).toString();
+      return fetchWithConfig(`${BASE_URL}/api/items?${queryString}`, {
+        method: 'GET',
+      });
+    },
     
-    return fetchWrapper(`${endpoint}${queryString}`, {
-      method: 'GET'
-    });
+    getById: (id) => 
+      fetchWithConfig(`${BASE_URL}/api/items/${id}`, {
+        method: 'GET',
+      }),
+      
+    create: (itemData) => 
+      fetchWithConfig(`${BASE_URL}/api/items`, {
+        method: 'POST',
+        body: JSON.stringify(itemData),
+      }),
+      
+    update: (id, itemData) => 
+      fetchWithConfig(`${BASE_URL}/api/items/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(itemData),
+      }),
+      
+    delete: (id) => 
+      fetchWithConfig(`${BASE_URL}/api/items/${id}`, {
+        method: 'DELETE',
+      }),
+      
+    getByUser: (userId) => 
+      fetchWithConfig(`${BASE_URL}/api/items/user/${userId}`, {
+        method: 'GET',
+      }),
+      
+    search: (query) => 
+      fetchWithConfig(`${BASE_URL}/api/items/search?query=${encodeURIComponent(query)}`, {
+        method: 'GET',
+      }),
+      
+    uploadImage: (formData) => 
+      fetchWithConfig(`${BASE_URL}/api/items/upload`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          // Don't set Content-Type when uploading files
+          // Browser will set it with boundary for multipart/form-data
+          'Content-Type': undefined,
+        },
+      }),
   },
   
-  // POST request
-  post: (endpoint, data) => {
-    return fetchWrapper(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
+  // Messages
+  messages: {
+    getConversations: () => 
+      fetchWithConfig(`${BASE_URL}/api/messages/conversations`, {
+        method: 'GET',
+      }),
+      
+    getMessages: (conversationId) => 
+      fetchWithConfig(`${BASE_URL}/api/messages/conversations/${conversationId}`, {
+        method: 'GET',
+      }),
+      
+    sendMessage: (data) => 
+      fetchWithConfig(`${BASE_URL}/api/messages`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+      
+    markAsRead: (messageId) => 
+      fetchWithConfig(`${BASE_URL}/api/messages/${messageId}/read`, {
+        method: 'PUT',
+      }),
   },
   
-  // PUT request
-  put: (endpoint, data) => {
-    return fetchWrapper(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(data)
-    });
+  // Users
+  users: {
+    getProfile: (userId) => 
+      fetchWithConfig(`${BASE_URL}/api/users/${userId}`, {
+        method: 'GET',
+      }),
+      
+    updateProfile: (userData) => 
+      fetchWithConfig(`${BASE_URL}/api/users/profile`, {
+        method: 'PUT',
+        body: JSON.stringify(userData),
+      }),
+      
+    getAll: () => 
+      fetchWithConfig(`${BASE_URL}/api/users`, {
+        method: 'GET',
+      }),
   },
   
-  // DELETE request
-  delete: (endpoint) => {
-    return fetchWrapper(endpoint, {
-      method: 'DELETE'
-    });
+  // System
+  system: {
+    health: () => 
+      fetchWithConfig(`${BASE_URL}/health`, {
+        method: 'GET',
+      }),
+      
+    ping: () => 
+      fetchWithConfig(`${BASE_URL}/api/ping`, {
+        method: 'GET',
+      }),
   }
 };
 
-export default api;
+export default apiService;

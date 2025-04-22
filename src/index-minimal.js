@@ -1,5 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import styled from 'styled-components';
+
+// Minimal styles
+const GlobalStyle = () => (
+  <style>
+    {`
+      body {
+        margin: 0;
+        font-family: 'Arial', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #f9f9f9;
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+    `}
+  </style>
+);
 
 // Styled components for minimal UI
 const Container = styled.div`
@@ -54,6 +74,7 @@ const ItemCard = styled.div`
   overflow: hidden;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s;
+  background-color: white;
   
   &:hover {
     transform: translateY(-5px);
@@ -150,11 +171,11 @@ const sampleItems = [
 
 // MinimalApp component
 const MinimalApp = () => {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
   
   // Load sample items
-  useEffect(() => {
+  React.useEffect(() => {
     // Simulate API fetch
     setTimeout(() => {
       setItems(sampleItems);
@@ -176,40 +197,47 @@ const MinimalApp = () => {
   }, []);
   
   return (
-    <Container>
-      <Header>
-        <Logo>Tedlist</Logo>
-        <Nav>
-          <NavLink href="/">Home</NavLink>
-          <NavLink href="/minimal">Minimal</NavLink>
-          <NavLink href="/login">Login</NavLink>
-        </Nav>
-      </Header>
-      
-      <div>
-        <h2>Welcome to Tedlist Marketplace</h2>
-        <p>Browse items from our community. The minimal version is functioning even if other parts aren't.</p>
+    <>
+      <GlobalStyle />
+      <Container>
+        <Header>
+          <Logo>Tedlist</Logo>
+          <Nav>
+            <NavLink href="/">Back to Home</NavLink>
+          </Nav>
+        </Header>
         
-        {loading ? (
-          <p>Loading items...</p>
-        ) : (
-          <ItemGrid>
-            {items.map(item => (
-              <ItemCard key={item.id}>
-                <ItemImage src={item.image} alt={item.title} />
-                <ItemContent>
-                  <ItemTitle>{item.title}</ItemTitle>
-                  <ItemPrice>{item.price}</ItemPrice>
-                  <ItemDescription>{item.description}</ItemDescription>
-                  <Button>View Details</Button>
-                </ItemContent>
-              </ItemCard>
-            ))}
-          </ItemGrid>
-        )}
-      </div>
-    </Container>
+        <div>
+          <h2>Welcome to Tedlist Marketplace</h2>
+          <p>Browse items from our community. This is a completely independent minimal version.</p>
+          
+          {loading ? (
+            <p>Loading items...</p>
+          ) : (
+            <ItemGrid>
+              {items.map(item => (
+                <ItemCard key={item.id}>
+                  <ItemImage src={item.image} alt={item.title} />
+                  <ItemContent>
+                    <ItemTitle>{item.title}</ItemTitle>
+                    <ItemPrice>{item.price}</ItemPrice>
+                    <ItemDescription>{item.description}</ItemDescription>
+                    <Button>View Details</Button>
+                  </ItemContent>
+                </ItemCard>
+              ))}
+            </ItemGrid>
+          )}
+        </div>
+      </Container>
+    </>
   );
 };
 
-export default MinimalApp;
+// Create root and render
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <MinimalApp />
+  </React.StrictMode>
+);
