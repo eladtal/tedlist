@@ -1,303 +1,380 @@
-import api from './api';
-<<<<<<< HEAD
+import apiService from './api';
+import { compressImage } from '../utils/imageUtils';
 
-/**
- * Get all items with optional filtering
- * @param {Object} params - Query parameters
- * @returns {Promise} - API response with items
- */
-export const getAllItems = async (params = {}) => {
+// Helper for localStorage access with feature detection
+const localStorageAvailable = () => {
   try {
-    const response = await api.get('/items', { params });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
+    const testKey = '__storage_test__';
+    localStorage.setItem(testKey, testKey);
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    return false;
   }
 };
 
-/**
- * Get a specific item by ID
- * @param {string} itemId - Item ID
- * @returns {Promise} - API response with item data
- */
-export const getItemById = async (itemId) => {
-  try {
-    const response = await api.get(`/items/${itemId}`);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-};
+// Local storage key for items
+const ITEMS_STORAGE_KEY = 'tedlistItems';
 
-/**
- * Get items for a specific user
- * @param {string} userId - User ID
- * @returns {Promise} - API response with user's items
- */
-export const getUserItems = async (userId) => {
-  try {
-    const response = await api.get(`/items/user/${userId}`);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-};
-
-/**
- * Create a new item
- * @param {Object} itemData - Item data
- * @returns {Promise} - API response with created item
- */
-export const createItem = async (itemData) => {
-  try {
-    const response = await api.post('/items', itemData);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-};
-
-/**
- * Update an existing item
- * @param {string} itemId - Item ID
- * @param {Object} itemData - Updated item data
- * @returns {Promise} - API response with updated item
- */
-export const updateItem = async (itemId, itemData) => {
-  try {
-    const response = await api.put(`/items/${itemId}`, itemData);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-};
-
-/**
- * Delete an item
- * @param {string} itemId - Item ID
- * @returns {Promise} - API response
- */
-export const deleteItem = async (itemId) => {
-  try {
-    const response = await api.delete(`/items/${itemId}`);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-};
-
-/**
- * Register a swipe on an item
- * @param {string} itemId - Item ID
- * @param {string} direction - Swipe direction ('left' or 'right')
- * @returns {Promise} - API response
- */
-export const swipeItem = async (itemId, direction) => {
-  try {
-    const response = await api.post(`/items/${itemId}/swipe`, { direction });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-};
-
-/**
- * Fallback method to handle transition from localStorage to API
- * This will attempt to use the API first, but fall back to localStorage if needed
- */
-export const getItemsWithFallback = async () => {
-  try {
-    // Try to get items from API first
-    const response = await getAllItems();
-    if (response.success && response.data) {
-      return response.data;
-    }
-  } catch (error) {
-    console.log('API not available yet, falling back to localStorage', error);
-  }
-
-  // Fallback to localStorage
-  const savedItems = localStorage.getItem('tedlistItems');
-  if (savedItems) {
-    return JSON.parse(savedItems);
-  }
+// Get items from localStorage
+const getItemsFromStorage = () => {
+  if (!localStorageAvailable()) return [];
   
-  // Return empty array if nothing found
-  return [];
+  try {
+    const items = localStorage.getItem(ITEMS_STORAGE_KEY);
+    return items ? JSON.parse(items) : [];
+  } catch (e) {
+    console.error('Error parsing items from localStorage:', e);
+    return [];
+  }
 };
-=======
-import { compressImage } from '../utils/image-utils';
+
+// Save items to localStorage
+const saveItemsToStorage = (items) => {
+  if (!localStorageAvailable()) return;
+  localStorage.setItem(ITEMS_STORAGE_KEY, JSON.stringify(items));
+};
+
+// Generate a unique local ID
+const generateLocalId = () => `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 const ItemService = {
-  // Get all items with optional filters
-  getItems: async (filters = {}) => {
+  // Get all items
+  getAll: async (params = {}) => {
     try {
-      const queryParams = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          queryParams.append(key, value);
-        }
-      });
+      // Try API first
+      const response = await apiService.items.getAll(params);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      console.warn('Failed to fetch items from API, falling back to localStorage', error);
       
-      const response = await api.get(`/items?${queryParams.toString()}`);
-      console.log('MongoDB items response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching items from MongoDB:', error);
-      return { items: [] };
+      // Fallback to localStorage
+      const items = getItemsFromStorage();
+      
+      // Apply simple filters if provided
+      let filtered = [...items];
+      
+      if (params.category) {
+        filtered = filtered.filter(item => item.category === params.category);
+      }
+      
+      if (params.minPrice) {
+        filtered = filtered.filter(item => item.price >= parseFloat(params.minPrice));
+      }
+      
+      if (params.maxPrice) {
+        filtered = filtered.filter(item => item.price <= parseFloat(params.maxPrice));
+      }
+      
+      return { 
+        success: true, 
+        data: filtered,
+        fromCache: true
+      };
     }
   },
   
-  // Get a single item by ID
-  getItem: async (id) => {
+  // Get item by ID
+  getById: async (id) => {
     try {
-      const response = await api.get(`/items/${id}`);
-      return response.data;
+      // Try API first
+      const response = await apiService.items.getById(id);
+      return { success: true, data: response.data.data };
     } catch (error) {
-      console.error(`Error fetching item ${id} from MongoDB:`, error);
-      throw error;
+      console.warn(`Failed to fetch item ${id} from API, falling back to localStorage`, error);
+      
+      // Fallback to localStorage
+      const items = getItemsFromStorage();
+      const item = items.find(item => item.id === id);
+      
+      if (item) {
+        return { success: true, data: item, fromCache: true };
+      } else {
+        return { success: false, error: 'Item not found' };
+      }
     }
   },
   
-  // Create a new item listing
-  createItem: async (itemData) => {
+  // Create a new item
+  create: async (itemData, uploadImages = true) => {
+    // Create unique local ID for the item (will be replaced by backend ID if API call succeeds)
+    const localId = generateLocalId();
+    
+    // Compress images if provided and uploadImages is true
+    let processedItemData = { ...itemData };
+    
+    if (uploadImages && itemData.images && itemData.images.length > 0) {
+      try {
+        // Compress images if they're not already URLs
+        const processedImages = await Promise.all(
+          itemData.images.map(async (image) => {
+            if (typeof image === 'string' && image.startsWith('http')) {
+              return image; // Already a URL, no need to process
+            }
+            return await compressImage(image, 800, 0.7);
+          })
+        );
+        
+        processedItemData.images = processedImages;
+      } catch (error) {
+        console.error('Error compressing images:', error);
+        // Continue with original images if compression fails
+      }
+    }
+    
     try {
-      console.log('Creating item in MongoDB:', itemData);
-      const response = await api.post('/items', itemData);
-      return response.data;
+      // Add the owner (current user) if not provided
+      if (!processedItemData.owner) {
+        const currentUser = JSON.parse(localStorage.getItem('tedlistUser') || '{}');
+        processedItemData.owner = currentUser.id;
+      }
+      
+      // Try API first
+      const response = await apiService.items.create(processedItemData);
+      return { success: true, data: response.data.data };
     } catch (error) {
-      console.error('Error creating item in MongoDB:', error);
-      throw error;
+      console.warn('Failed to create item via API, falling back to localStorage', error);
+      
+      // Fallback to localStorage
+      const items = getItemsFromStorage();
+      const currentUser = JSON.parse(localStorage.getItem('tedlistUser') || '{}');
+      
+      // Create a local item
+      const newItem = {
+        ...processedItemData,
+        id: localId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        owner: currentUser.id,
+        // Add user details for UI display
+        user: {
+          id: currentUser.id,
+          username: currentUser.username,
+          profileImage: currentUser.profileImage
+        }
+      };
+      
+      // Save to localStorage
+      saveItemsToStorage([newItem, ...items]);
+      
+      return { 
+        success: true, 
+        data: newItem,
+        fromCache: true,
+        message: 'Item saved locally. It will sync when connected to the server.'
+      };
     }
   },
   
-  // Update an existing item
-  updateItem: async (id, itemData) => {
+  // Update an item
+  update: async (id, itemData) => {
     try {
-      const response = await api.put(`/items/${id}`, itemData);
-      return response.data;
+      // Try API first
+      const response = await apiService.items.update(id, itemData);
+      return { success: true, data: response.data.data };
     } catch (error) {
-      console.error(`Error updating item ${id} in MongoDB:`, error);
-      throw error;
+      console.warn(`Failed to update item ${id} via API, falling back to localStorage`, error);
+      
+      // Fallback to localStorage
+      const items = getItemsFromStorage();
+      const itemIndex = items.findIndex(item => item.id === id);
+      
+      if (itemIndex !== -1) {
+        // Update the item
+        const updatedItem = {
+          ...items[itemIndex],
+          ...itemData,
+          updatedAt: new Date().toISOString()
+        };
+        
+        items[itemIndex] = updatedItem;
+        saveItemsToStorage(items);
+        
+        return { 
+          success: true, 
+          data: updatedItem,
+          fromCache: true,
+          message: 'Item updated locally. It will sync when connected to the server.'
+        };
+      } else {
+        return { success: false, error: 'Item not found' };
+      }
     }
   },
   
   // Delete an item
-  deleteItem: async (id) => {
+  delete: async (id) => {
     try {
-      const response = await api.delete(`/items/${id}`);
-      return response.data;
+      // Try API first
+      await apiService.items.delete(id);
+      return { success: true };
     } catch (error) {
-      console.error(`Error deleting item ${id} from MongoDB:`, error);
-      throw error;
-    }
-  },
-  
-  // Get items for a specific user
-  getUserItems: async (userId) => {
-    try {
-      if (!userId) {
-        console.error('getUserItems called with undefined userId');
-        return { items: [] }; // Return empty array as fallback
+      console.warn(`Failed to delete item ${id} via API, falling back to localStorage`, error);
+      
+      // Fallback to localStorage
+      const items = getItemsFromStorage();
+      const filteredItems = items.filter(item => item.id !== id);
+      
+      if (items.length !== filteredItems.length) {
+        saveItemsToStorage(filteredItems);
+        return { 
+          success: true,
+          fromCache: true,
+          message: 'Item deleted locally. It will sync when connected to the server.'
+        };
+      } else {
+        return { success: false, error: 'Item not found' };
       }
-      const response = await api.get(`/items/user/${userId}`);
-      console.log(`MongoDB items for user ${userId}:`, response.data);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching items for user ${userId} from MongoDB:`, error);
-      return { items: [] };
     }
   },
   
-  // Get items for current user
-  getMyItems: async () => {
+  // Get items by user
+  getByUser: async (userId) => {
     try {
-      // Try to get user from localStorage
-      let user;
+      // Try API first
+      const response = await apiService.items.getByUser(userId);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      console.warn(`Failed to fetch items for user ${userId} from API, falling back to localStorage`, error);
+      
+      // Fallback to localStorage
+      const items = getItemsFromStorage();
+      const userItems = items.filter(item => item.owner === userId);
+      
+      return { 
+        success: true, 
+        data: userItems,
+        fromCache: true
+      };
+    }
+  },
+  
+  // Get items for swiping
+  getForSwipe: async () => {
+    try {
+      // Try API first
+      const response = await apiService.items.getForSwipe();
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      console.warn('Failed to fetch swipe items from API, falling back to localStorage', error);
+      
+      // Fallback to localStorage - get all items except user's own
+      const items = getItemsFromStorage();
+      const currentUser = JSON.parse(localStorage.getItem('tedlistUser') || '{}');
+      
+      // Filter out user's own items
+      const swipeItems = items.filter(item => item.owner !== currentUser.id);
+      
+      return { 
+        success: true, 
+        data: swipeItems,
+        fromCache: true
+      };
+    }
+  },
+  
+  // Swipe on an item
+  swipeItem: async (itemId, direction) => {
+    try {
+      // Try API first
+      const response = await apiService.items.swipe(itemId, direction);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      console.warn(`Failed to register swipe for item ${itemId} via API, storing locally`, error);
+      
+      // Store swipe locally
+      const currentUser = JSON.parse(localStorage.getItem('tedlistUser') || '{}');
+      const swipes = JSON.parse(localStorage.getItem('tedlistSwipes') || '[]');
+      
+      // Add swipe
+      swipes.push({
+        itemId,
+        userId: currentUser.id,
+        direction,
+        timestamp: new Date().toISOString()
+      });
+      
+      localStorage.setItem('tedlistSwipes', JSON.stringify(swipes));
+      
+      return { 
+        success: true,
+        fromCache: true,
+        message: 'Swipe stored locally. It will sync when connected to the server.'
+      };
+    }
+  },
+  
+  // Get user's liked items
+  getLikedItems: async () => {
+    try {
+      // Try API first
+      const response = await apiService.items.getLiked();
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      console.warn('Failed to fetch liked items from API, falling back to localStorage', error);
+      
+      // Fallback to localStorage
+      const items = getItemsFromStorage();
+      const swipes = JSON.parse(localStorage.getItem('tedlistSwipes') || '[]');
+      const currentUser = JSON.parse(localStorage.getItem('tedlistUser') || '{}');
+      
+      // Get IDs of liked items
+      const likedItemIds = swipes
+        .filter(swipe => swipe.userId === currentUser.id && swipe.direction === 'right')
+        .map(swipe => swipe.itemId);
+      
+      // Get liked items
+      const likedItems = items.filter(item => likedItemIds.includes(item.id));
+      
+      return { 
+        success: true, 
+        data: likedItems,
+        fromCache: true
+      };
+    }
+  },
+  
+  // Migrate locally stored items to API
+  migrateLocalItems: async () => {
+    const items = getItemsFromStorage();
+    if (!items.length) return { success: true, migrated: 0 };
+    
+    let migrated = 0;
+    const failed = [];
+    
+    for (const item of items) {
       try {
-        const userString = localStorage.getItem('user');
-        if (!userString) {
-          console.error('No user found in localStorage');
-          return { items: [] };
-        }
+        // Skip items that don't have a local ID (meaning they're already synced)
+        if (!item.id.startsWith('local_')) continue;
         
-        user = JSON.parse(userString);
-        // Check if user object has an id property (MongoDB uses _id)
-        const userId = user.id || user._id;
+        // Create item via API
+        const result = await apiService.items.create({
+          ...item,
+          id: undefined // Remove local ID for creation
+        });
         
-        if (!userId) {
-          console.error('User object has no id:', user);
-          return { items: [] };
-        }
-        
-        return await ItemService.getUserItems(userId);
+        migrated++;
       } catch (error) {
-        console.error('Error getting user items:', error);
-        return { items: [] };
+        console.error(`Failed to migrate item ${item.id}:`, error);
+        failed.push(item.id);
       }
-    } catch (error) {
-      console.error('Error in getMyItems:', error);
-      return { items: [] };
     }
-  },
-  
-  // Process photos for item creation/update
-  processPhotos: async (photos) => {
-    try {
-      // If photos is an array of objects with preview property (from our form),
-      // convert them to base64 strings for the API
-      if (!Array.isArray(photos)) {
-        console.error('Photos is not an array:', photos);
-        return { success: false, error: 'Invalid photos format' };
-      }
-      
-      // Ensure we're compressing images to keep MongoDB payload sizes reasonable
-      const processedPhotos = await Promise.all(photos.map(async photo => {
-        // If it's already a string (base64), return it
-        if (typeof photo === 'string') return photo;
-        
-        // If it's an object with a preview property that's a string, return that
-        if (photo && typeof photo.preview === 'string') return photo.preview;
-        
-        // If it's a File object, compress it
-        if (photo && photo.file instanceof File) {
-          try {
-            const compressed = await compressImage(photo.file, 0.5); // Use our compression utility
-            return await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result);
-              reader.onerror = reject;
-              reader.readAsDataURL(compressed);
-            });
-          } catch (err) {
-            console.error('Error compressing photo:', err);
-            // If compression fails, try to use the original file
-            if (photo.file) {
-              return await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(photo.file);
-              });
-            }
-          }
-        }
-        
-        // If all else fails, return null (this photo will be filtered out)
-        return null;
-      }));
-      
-      // Filter out any null values
-      const validPhotos = processedPhotos.filter(Boolean);
-      
-      console.log(`Processed ${validPhotos.length} photos for MongoDB upload`);
-      return { success: true, data: validPhotos };
-    } catch (error) {
-      console.error('Error processing photos for MongoDB:', error);
-      return { success: false, error: 'Failed to process photos' };
+    
+    // If all items migrated, clear localStorage
+    if (failed.length === 0) {
+      localStorage.removeItem(ITEMS_STORAGE_KEY);
+    } else {
+      // Keep failed items in localStorage
+      const remainingItems = items.filter(item => failed.includes(item.id));
+      saveItemsToStorage(remainingItems);
     }
+    
+    return { 
+      success: true, 
+      migrated,
+      failed: failed.length
+    };
   }
 };
 
 export default ItemService;
->>>>>>> temp-branch

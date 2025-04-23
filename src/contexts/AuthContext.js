@@ -1,362 +1,207 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-<<<<<<< HEAD
-import { 
-  registerUser, 
-  loginUser, 
-  logoutUser, 
-  getCurrentUser, 
-  updatePassword
-} from '../services/auth.service';
-=======
-import { AuthService } from '../services';
->>>>>>> temp-branch
+import AuthService from '../services/auth.service';
 
-// Create the auth context
-const AuthContext = createContext();
+// Create auth context
+export const AuthContext = createContext();
 
-// Create a custom hook to use the auth context
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+// Custom hook to use auth context
+export const useAuth = () => useContext(AuthContext);
 
-// Helper function to normalize user object to ensure it has an 'id' property
-const normalizeUser = (user) => {
-  if (!user) return null;
-  
-  // Create a new object to avoid mutating the original
-  const normalizedUser = { ...user };
-  
-  // Ensure user has an id property (MongoDB uses _id)
-  if (!normalizedUser.id && normalizedUser._id) {
-    normalizedUser.id = normalizedUser._id;
-  }
-  
-  return normalizedUser;
-};
-
-export const AuthProvider = ({ children }) => {
+// Auth Provider component
+export const AuthProvider = ({ children, adminEnabled = true }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
-<<<<<<< HEAD
-  // Function to set current user data
-  const setUserData = (userData, token) => {
-    setCurrentUser(userData);
-    if (token) {
-      localStorage.setItem('tedlistAuthToken', token);
-    }
-    // Also store user data for development mode
-    localStorage.setItem('tedlistUser', JSON.stringify(userData));
-  };
-  
-  // Function to clear user data on logout
-  const clearUserData = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('tedlistAuthToken');
-    localStorage.removeItem('tedlistUser');
-  };
-
-  // Check if user is already logged in (using token)
+  // Initial load - check if user is already logged in
   useEffect(() => {
-    // Force loading state to complete after a very short delay
-    // This ensures the app never stays stuck in loading state
-    const forceComplete = setTimeout(() => {
-      if (loading) {
-        console.log('Auth context: Forcing loading completion');
-        setLoading(false);
-      }
-    }, 1000); // Just 1 second to avoid hanging
-    
-    const checkLoggedInUser = async () => {
+    const checkAuthStatus = async () => {
+      setLoading(true);
       try {
-        // Development mode - simplified login check
-        if (process.env.NODE_ENV === 'development') {
-          // Try to get user from localStorage
-          const savedUser = localStorage.getItem('tedlistUser');
-          
-          if (savedUser) {
-            try {
-              const userData = JSON.parse(savedUser);
-              setCurrentUser(userData);
-            } catch (error) {
-              console.warn('Error parsing saved user:', error);
-            }
-          }
-          
-          // End loading state
-          setLoading(false);
-          return;
-        }
+        // First check localStorage for user data
+        const storedUser = AuthService.getCurrentUser();
         
-        // Production mode - proper API check
-        try {
-          const response = await getCurrentUser();
-          if (response.success && response.data) {
-            setUserData(response.data, response.token);
-          }
-        } catch (error) {
-          console.error('Error loading user data:', error);
-          localStorage.removeItem('tedlistAuthToken');
-=======
-  // Set current user with normalization
-  const setNormalizedUser = (user) => {
-    const normalizedUser = normalizeUser(user);
-    setCurrentUser(normalizedUser);
-    
-    // Also update localStorage if needed
-    if (normalizedUser) {
-      localStorage.setItem('user', JSON.stringify(normalizedUser));
-    }
-  };
-  
-  // Check if user is already logged in (from token)
-  useEffect(() => {
-    const checkLoggedInUser = async () => {
-      try {
-        // Get user from localStorage (saved by AuthService)
-        const savedUser = AuthService.getCurrentUser();
-        
-        if (savedUser && AuthService.isAuthenticated()) {
-          // Set the current user from localStorage initially (normalized)
-          setNormalizedUser(savedUser);
+        if (storedUser) {
+          setCurrentUser(storedUser);
           
-          // If we have a token, verify it by fetching current user data
+          // Check if user is admin
+          setIsAdmin(checkUserIsAdmin(storedUser));
+          
+          // Verify token with server if available
           try {
             const response = await AuthService.fetchCurrentUser();
-            if (response.success) {
-              setNormalizedUser(response.data);
-            } else {
-              // If token is invalid, log out
-              AuthService.logout();
-              setCurrentUser(null);
+            if (response.success && response.user) {
+              setCurrentUser(response.user);
+              setIsAdmin(checkUserIsAdmin(response.user));
             }
           } catch (error) {
-            console.error('Error fetching user data:', error);
-            // Don't log out on connection errors, so app can work offline
+            console.warn('Failed to verify token with server, using stored user data');
           }
->>>>>>> temp-branch
+        } else {
+          setCurrentUser(null);
+          setIsAdmin(false);
         }
       } catch (error) {
-        console.error('Error in auth check:', error);
+        console.error('Error checking auth status:', error);
+        setAuthError(error.message || 'Authentication error');
       } finally {
-        // Always set loading to false to avoid infinite loading
         setLoading(false);
       }
     };
     
-    checkLoggedInUser();
-    
-    return () => clearTimeout(forceComplete);
+    checkAuthStatus();
   }, []);
   
-  // Register a new user
-  const signup = async (email, password, username, profileImage = null) => {
-    try {
-<<<<<<< HEAD
-      // Development mode - simplified signup
-      if (process.env.NODE_ENV === 'development') {
-        const userData = {
-          id: 'dev-' + Date.now(),
-          email,
-          username,
-          profileImage: profileImage || 'https://randomuser.me/api/portraits/lego/1.jpg',
-          createdAt: new Date().toISOString()
-        };
-        
-        const token = 'dev-token-' + Date.now();
-        setUserData(userData, token);
-        
-        return userData;
-      }
-      
-      // Use the API service to register user
-      const userData = {
-        email,
-        username,
-        password,
-        profileImage: profileImage || 'https://randomuser.me/api/portraits/lego/1.jpg'
-      };
-      
-      const response = await registerUser(userData);
-      
-      // If successful, set current user
-      if (response.success && response.user) {
-        setUserData(response.user, response.token);
-      }
-      
-      return response.user;
-=======
-      console.log('Registering user with production backend on tedlist.onrender.com');
-      const userData = {
-        email,
-        username,
-        password
-      };
-      
-      // Use the AuthService to register the user
-      const result = await AuthService.register(userData);
-      
-      if (result.success) {
-        // Set current user from the response (normalized)
-        setNormalizedUser(result.user);
-        
-        // If profile image was provided, update it
-        if (profileImage) {
-          await updateProfile({ profileImage });
-        }
-        
-        return normalizeUser(result.user);
-      } else {
-        throw new Error(result.error || 'Failed to create account');
-      }
->>>>>>> temp-branch
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
-    }
-  };
-  
-  // Login function
-  const login = async (email, password) => {
-    try {
-<<<<<<< HEAD
-      // Development mode - simplified login
-      if (process.env.NODE_ENV === 'development') {
-        const userData = {
-          id: 'dev-' + Date.now(),
-          email,
-          username: email.split('@')[0],
-          profileImage: 'https://randomuser.me/api/portraits/lego/1.jpg',
-          createdAt: new Date().toISOString()
-        };
-        
-        const token = 'dev-token-' + Date.now();
-        setUserData(userData, token);
-        
-        return userData;
-      }
-      
-      // Use the API service to login
-      const response = await loginUser({ email, password });
-      
-      // If successful, set current user
-      if (response.success && response.user) {
-        setUserData(response.user, response.token);
-      }
-      
-      return response.user;
-=======
-      console.log('Logging in with production backend on tedlist.onrender.com');
-      const result = await AuthService.login(email, password);
-      
-      if (result.success) {
-        // Set current user from the response (normalized)
-        setNormalizedUser(result.user);
-        
-        // If this is a demo login, show a notification
-        if (result.demo) {
-          console.warn('Using demo login as fallback - production server unreachable');
-        }
-        
-        return normalizeUser(result.user);
-      } else {
-        throw new Error(result.error || 'Invalid credentials');
-      }
->>>>>>> temp-branch
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
-  };
-  
-  // Logout function
-  const logout = () => {
-<<<<<<< HEAD
-    // Use the API service to logout
-    logoutUser();
-    clearUserData();
-  };
-  
-  // Update profile function
-  const updateProfile = async (profileData) => {
-    if (!currentUser) return null;
+  // Function to check if a user is an admin
+  const checkUserIsAdmin = (user) => {
+    if (!adminEnabled) return false;
     
-=======
-    AuthService.logout();
-    setCurrentUser(null);
+    // Admin check logic
+    if (!user) return false;
+    
+    // Check for explicit admin flag
+    if (user.isAdmin === true) return true;
+    
+    // Check for admin role
+    if (user.role === 'admin') return true;
+    
+    // Check email domain for admin access (example: @admin.com)
+    if (user.email && user.email.endsWith('@admin.com')) return true;
+    
+    return false;
   };
   
-  // Update profile function
-  const updateProfile = async (updates) => {
->>>>>>> temp-branch
+  // Register a new user
+  const register = async (userData) => {
+    setLoading(true);
+    setAuthError(null);
+    
     try {
-      if (process.env.NODE_ENV === 'development') {
-        // In development, just update the local user data
-        const updatedUser = { ...currentUser, ...profileData };
-        setUserData(updatedUser);
-        return updatedUser;
-      }
-      
-<<<<<<< HEAD
-      try {
-        // Try to update via API using our apiService
-        const apiService = await import('../services/api').then(module => module.default);
-        const response = await apiService.users.updateProfile(profileData);
-        if (response.success) {
-          setUserData(response.user, response.token);
-          return response.user;
-        }
-      } catch (apiError) {
-        console.warn('API update failed, using local fallback:', apiError);
-        
-        // Fallback to local update
-        const updatedUser = { ...currentUser, ...profileData };
-        
-        // Update current user state
-        setUserData(updatedUser);
-        
-        // Update in localStorage too (legacy support)
-        localStorage.setItem('tedlistUser', JSON.stringify(updatedUser));
-        
-        return updatedUser;
-      }
-    } catch (error) {
-      console.error('Profile update error:', error);
-=======
-      // Use the AuthService to update profile
-      const response = await AuthService.updateProfile(updates);
+      const response = await AuthService.register(userData);
       
       if (response.success) {
-        // Update context state with new user data
-        setNormalizedUser(response.data);
-        return normalizeUser(response.data);
+        setCurrentUser(response.user);
+        setIsAdmin(checkUserIsAdmin(response.user));
+        return { success: true, user: response.user };
       } else {
-        throw new Error(response.error || 'Failed to update profile');
+        setAuthError(response.error || 'Registration failed');
+        return { success: false, error: response.error };
       }
     } catch (error) {
-      console.error('Update profile error:', error);
->>>>>>> temp-branch
-      throw error;
+      const errorMessage = error.message || 'Registration failed';
+      setAuthError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
     }
   };
   
-  // Export all the functions and state
-  const value = {
+  // Login user
+  const login = async (email, password) => {
+    setLoading(true);
+    setAuthError(null);
+    
+    try {
+      const response = await AuthService.login(email, password);
+      
+      if (response.success) {
+        setCurrentUser(response.user);
+        setIsAdmin(checkUserIsAdmin(response.user));
+        return { success: true, user: response.user };
+      } else {
+        setAuthError(response.error || 'Login failed');
+        return { success: false, error: response.error };
+      }
+    } catch (error) {
+      const errorMessage = error.message || 'Login failed';
+      setAuthError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Logout user
+  const logout = () => {
+    AuthService.logout();
+    setCurrentUser(null);
+    setIsAdmin(false);
+    setAuthError(null);
+  };
+  
+  // Update user profile
+  const updateProfile = async (profileData) => {
+    setLoading(true);
+    
+    try {
+      const response = await AuthService.updateProfile(profileData);
+      
+      if (response.success) {
+        // Update current user with new profile data
+        const updatedUser = { ...currentUser, ...response.user };
+        setCurrentUser(updatedUser);
+        return { success: true, user: updatedUser };
+      } else {
+        return { success: false, error: response.error };
+      }
+    } catch (error) {
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // For demo or development - set a user directly
+  const setUser = (user) => {
+    if (user) {
+      setCurrentUser(user);
+      setIsAdmin(checkUserIsAdmin(user));
+      // Store in localStorage for persistence
+      AuthService.updateUserData(user);
+    } else {
+      logout();
+    }
+  };
+  
+  // Update password
+  const updatePassword = async (currentPassword, newPassword) => {
+    setLoading(true);
+    
+    try {
+      const response = await AuthService.updatePassword({ currentPassword, newPassword });
+      
+      if (response.success) {
+        return { success: true, message: response.message || 'Password updated successfully' };
+      } else {
+        return { success: false, error: response.error };
+      }
+    } catch (error) {
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Context value
+  const authContextValue = {
     currentUser,
-    signup,
+    loading,
+    authError,
+    isAdmin,
+    register,
     login,
     logout,
     updateProfile,
-    loading,
-    setCurrentUser, // Add direct setter for development tools
-    isAdmin: currentUser && currentUser.email === 'admin@example.com'
+    updatePassword,
+    setCurrentUser: setUser // Alias for development/testing
   };
   
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export default AuthProvider;
+export default AuthContext;

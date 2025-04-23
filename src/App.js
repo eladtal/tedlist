@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-=======
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom/dist/index.js';
->>>>>>> temp-branch
 import { ThemeProvider } from 'styled-components';
 import styled from 'styled-components';
 import theme from './styles/theme';
@@ -38,73 +33,95 @@ import MinimalApp from './MinimalApp';
 
 // FEATURE FLAGS - Enable these one by one to find the source of loading issues
 const FEATURES = {
-  USE_AUTH: false,            // Authentication provider
-  USE_NOTIFICATIONS: false,   // Notification provider
-  USE_ADMIN: false,           // Admin provider
-  USE_TRADE: false,           // Trade interaction provider
-  USE_POINTS: false,          // Points provider
-  USE_ONBOARDING: false,      // Onboarding provider
-  USE_FULL_ROUTES: false,     // All routes or just minimal ones
-  
-  // Development mode flags
-  DEV_MODE: process.env.NODE_ENV === 'development',      // Enable development mode features
-  DEV_BYPASS_AUTH: process.env.NODE_ENV === 'development', // Skip authentication in development
-  
-  // Debug mode will show provider loading state on screen
-  DEBUG_MODE: true
+  USE_AUTH: true,         // Authentication provider
+  USE_NOTIFICATIONS: true, // Notification provider
+  USE_ADMIN: true,        // Admin provider
+  USE_ONBOARDING: true,   // Onboarding provider
+  USE_TRADE: true,        // Trade interaction provider
+  USE_POINTS: true,       // Points provider
+  USE_DEBUG: true,        // Debug UI elements
+  LOADING_TIMEOUT: 2000,  // Max time to wait for providers to load (ms)
 };
 
-// Add a loading timeout for safety
+// Simple component to show when app is in minimal mode
+const MinimalApp = () => (
+  <div style={{ padding: 20, maxWidth: 800, margin: '0 auto' }}>
+    <h1>TedList - Minimal Mode</h1>
+    <p>This is a simplified version of the app for testing or preview.</p>
+    <div style={{ marginTop: 20 }}>
+      <a href="/">Go to main app</a>
+    </div>
+  </div>
+);
+
+// Error boundary component to catch errors in the app
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('App error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 20, maxWidth: 800, margin: '0 auto' }}>
+          <h1>Something went wrong</h1>
+          <p>We're sorry, but there was an error loading the app.</p>
+          <pre>{this.state.error && this.state.error.toString()}</pre>
+          <button onClick={() => window.location.reload()}>Reload App</button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Loading timeout component to prevent infinite loading states
 const LoadingTimeout = ({ children }) => {
-  const [showTimeout, setShowTimeout] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
   
   useEffect(() => {
-    // Safety timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      console.warn('Application render timeout triggered');
-      setShowTimeout(true);
-    }, 30000); // 30 seconds
+    // Set a timeout to force loading to complete
+    const timer = setTimeout(() => {
+      console.warn(`Provider loading timed out after ${FEATURES.LOADING_TIMEOUT}ms`);
+      setTimedOut(true);
+    }, FEATURES.LOADING_TIMEOUT);
     
-    return () => clearTimeout(timeout);
+    return () => clearTimeout(timer);
   }, []);
   
-  if (showTimeout) {
+  // If we've timed out, we'll render a special version of the children
+  // that ignores loading states
+  if (timedOut) {
     return (
-      <div style={{ 
-        padding: '20px',
-        maxWidth: '500px',
-        margin: '100px auto',
-        backgroundColor: '#fff3cd',
-        border: '1px solid #ffeeba',
-        borderRadius: '4px',
-        textAlign: 'center'
-      }}>
-        <h2 style={{ color: '#856404' }}>Loading Timeout</h2>
-        <p>The application is taking too long to load. This could be due to network issues or an application error.</p>
-        <div style={{ margin: '20px 0' }}>
-          <a href="/react-app.html" style={{ 
-            display: 'inline-block',
-            padding: '10px 15px',
-            backgroundColor: '#6A5ACD',
-            color: 'white',
-            textDecoration: 'none',
-            borderRadius: '4px',
-            marginRight: '15px'
-          }}>
-            Use Simple Version
-          </a>
-          <button onClick={() => window.location.reload()} style={{ 
-            padding: '10px 15px',
-            backgroundColor: '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}>
-            Reload Page
-          </button>
-        </div>
-      </div>
+      <>
+        {children}
+        {FEATURES.USE_DEBUG && (
+          <div 
+            style={{ 
+              position: 'fixed', 
+              bottom: 0, 
+              right: 0, 
+              background: 'rgba(255,0,0,0.7)', 
+              color: 'white',
+              padding: 5,
+              fontSize: 12,
+              zIndex: 9999
+            }}
+          >
+            Loading timeout activated
+          </div>
+        )}
+      </>
     );
   }
   
@@ -116,53 +133,43 @@ const PrivateRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
   const location = useLocation();
   
-  // Always declare state variables unconditionally
-  const [forceAuth, setForceAuth] = useState(false);
-  
-  // Always call useEffect unconditionally
-  useEffect(() => {
-    // Only set the timer if we're loading and not in dev bypass mode
-    if (loading && !(FEATURES.DEV_BYPASS_AUTH && process.env.NODE_ENV === 'development')) {
-      const timer = setTimeout(() => {
-        console.warn('Auth still loading after timeout, forcing decision');
-        setForceAuth(true);
-      }, 5000); // 5 second safety net
-      
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
-  
-  // Development mode bypass - moved after hooks
-  if (FEATURES.DEV_BYPASS_AUTH && process.env.NODE_ENV === 'development') {
-    console.log('DEV MODE: Bypassing authentication check');
-    return children;
-  }
-  
-  // If still loading and not past timeout, show loading
-  if (loading && !forceAuth) {
+  // If we're still loading, show loading state
+  if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        flexDirection: 'column'
-      }}>
-        <div style={{ marginBottom: '15px' }}>Loading authentication...</div>
-        <div style={{ width: '40px', height: '40px', border: '4px solid rgba(0,0,0,0.1)', borderRadius: '50%', borderLeftColor: '#6A5ACD', animation: 'spin 1s linear infinite' }}></div>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}>
+        <p>Loading...</p>
       </div>
     );
   }
   
-  if (!currentUser && !forceAuth) {
-    // Redirect to login if not authenticated
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  // If user isn't authenticated, redirect to login
+  if (!currentUser) {
+    // Save the attempted URL for redirecting after login
+    sessionStorage.setItem('redirectAfterLogin', location.pathname);
+    return <Navigate to="/login" state={{ from: location }} />;
+  }
+  
+  // If in dev mode and debug is enabled, show debug info
+  if (process.env.NODE_ENV === 'development' && FEATURES.USE_DEBUG) {
+    return (
+      <>
+        {children}
+        <div 
+          style={{ 
+            position: 'fixed', 
+            bottom: 30, 
+            right: 0, 
+            background: 'rgba(0,0,255,0.7)', 
+            color: 'white',
+            padding: 5,
+            fontSize: 12,
+            zIndex: 9999
+          }}
+        >
+          Auth: {currentUser.email || currentUser.username}
+        </div>
+      </>
+    );
   }
   
   return children;
@@ -170,40 +177,44 @@ const PrivateRoute = ({ children }) => {
 
 // Admin Route component to protect admin routes
 const AdminRoute = ({ children }) => {
-  // Get auth context without destructuring isAdmin
-  const authContext = useAuth();
-  const adminContext = useAdmin();
-  const location = useLocation();
+  const { currentUser, loading } = useAuth();
+  const { isAdmin } = useAdmin();
   
-  // Development mode bypass
-  if (FEATURES.DEV_BYPASS_AUTH && process.env.NODE_ENV === 'development') {
-    console.log('DEV MODE: Bypassing admin authentication check');
-    return children;
+  // If we're still loading, show loading state
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}>
+        <p>Loading admin access...</p>
+      </div>
+    );
   }
   
-  // Safe access to currentUser
-  const currentUser = authContext?.currentUser;
+  // Check if user is authenticated and is an admin
+  if (!currentUser || !isAdmin) {
+    return <Navigate to="/" />;
+  }
   
-  // Multi-layered safety checks for admin status
-  const checkIsAdmin = () => {
-    // If admin feature is disabled, nobody is admin
-    if (!FEATURES.USE_ADMIN) return false;
-    
-    // First try adminContext.isAdmin if available
-    if (adminContext && typeof adminContext.isAdmin === 'boolean') {
-      return adminContext.isAdmin;
-    }
-    
-    // Fallback to email check
-    return currentUser && 
-           currentUser.email && 
-           (currentUser.email === 'admin@example.com' || 
-            currentUser.email.includes('admin'));
-  };
-  
-  // If not authenticated or not admin, redirect to home
-  if (!currentUser || !checkIsAdmin()) {
-    return <Navigate to="/" replace />;
+  // If in dev mode and debug is enabled, show debug info
+  if (process.env.NODE_ENV === 'development' && FEATURES.USE_DEBUG) {
+    return (
+      <>
+        {children}
+        <div 
+          style={{ 
+            position: 'fixed', 
+            bottom: 60, 
+            right: 0, 
+            background: 'rgba(128,0,128,0.7)', 
+            color: 'white',
+            padding: 5,
+            fontSize: 12,
+            zIndex: 9999
+          }}
+        >
+          Admin mode
+        </div>
+      </>
+    );
   }
   
   return children;
@@ -211,105 +222,40 @@ const AdminRoute = ({ children }) => {
 
 // Debug provider to track loading state of a provider
 const DebugProvider = ({ name, loading, children }) => {
-  if (!FEATURES.DEBUG_MODE) return children;
+  // If not in development or debug disabled, just render children
+  if (process.env.NODE_ENV !== 'development' || !FEATURES.USE_DEBUG) {
+    return children;
+  }
   
   return (
-    <div style={{ position: 'relative' }}>
+    <>
+      {children}
       {loading && (
-        <div style={{
-          position: 'fixed',
-          bottom: '10px',
-          left: '10px',
-          backgroundColor: '#f8d7da',
-          color: '#721c24',
-          padding: '5px 10px',
-          borderRadius: '4px',
-          zIndex: 9999,
-          fontSize: '12px',
-          opacity: 0.9
-        }}>
-          {name} is still loading...
+        <div 
+          style={{ 
+            position: 'fixed', 
+            bottom: 90, 
+            right: 0, 
+            background: 'rgba(255,165,0,0.7)', 
+            color: 'white',
+            padding: 5,
+            fontSize: 12,
+            zIndex: 9999
+          }}
+        >
+          {name} loading...
         </div>
       )}
-      {children}
-    </div>
+    </>
   );
 };
 
 // This wrapper is needed to access location for conditional navbar rendering
 const AppContent = () => {
   const location = useLocation();
-  const { currentUser } = useAuth();
-  
-<<<<<<< HEAD
-  // Routes that don't need a navbar
-  const noNavbarRoutes = ['/login', '/signup', '/onboarding'];
-  const shouldShowNavbar = !noNavbarRoutes.includes(location.pathname);
-  
-  return (
-    <>
-      {shouldShowNavbar && <Navbar />}
-      
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<LoginScreen />} />
-        <Route path="/signup" element={<SignupScreen />} />
-        
-        {/* Full routes or minimal routes based on feature flag */}
-        {FEATURES.USE_FULL_ROUTES ? (
-          <>
-            {/* Protected routes - require authentication */}
-            <Route path="/" element={<PrivateRoute><HomeScreen /></PrivateRoute>} />
-            <Route path="/swipe" element={<PrivateRoute><SwipeScreen /></PrivateRoute>} />
-            <Route path="/swipe/history" element={<PrivateRoute><SwipeHistoryScreen /></PrivateRoute>} />
-            <Route path="/item/:id" element={<PrivateRoute><ItemDetailScreen /></PrivateRoute>} />
-            <Route path="/upload" element={<PrivateRoute><UploadScreen /></PrivateRoute>} />
-            <Route path="/profile" element={<PrivateRoute><ProfileScreen /></PrivateRoute>} />
-            <Route path="/profile/:id" element={<PrivateRoute><ProfileScreen /></PrivateRoute>} />
-            <Route path="/messages" element={<PrivateRoute><MessagesScreen /></PrivateRoute>} />
-            <Route path="/messages/:id" element={<PrivateRoute><ChatScreen /></PrivateRoute>} />
-            <Route path="/trade/:id" element={<PrivateRoute><TradePage /></PrivateRoute>} />
-            <Route path="/trade-swipe" element={<PrivateRoute><TradeSwipe /></PrivateRoute>} />
-            <Route path="/share/:id" element={<PrivateRoute><ShareScreen /></PrivateRoute>} />
-            <Route path="/notifications" element={<PrivateRoute><NotificationsScreen /></PrivateRoute>} />
-            <Route path="/onboarding" element={<PrivateRoute><OnboardingScreen /></PrivateRoute>} />
-            
-            {/* Admin routes */}
-            <Route path="/admin" element={<AdminRoute><AdminScreen /></AdminRoute>} />
-          </>
-        ) : (
-          /* Minimal routes when debugging */
-          <>
-            <Route path="/" element={
-              <div style={{ padding: '20px', marginTop: '80px' }}>
-                <h1>Tedlist Marketplace</h1>
-                <p>This is a reduced functionality version for debugging.</p>
-                <p>Feature flags: {JSON.stringify(FEATURES, null, 2)}</p>
-                {currentUser ? (
-                  <div style={{ marginTop: '20px' }}>
-                    <h2>Welcome, {currentUser.displayName || currentUser.email}</h2>
-                    <p>User is authenticated.</p>
-                  </div>
-                ) : (
-                  <div style={{ marginTop: '20px' }}>
-                    <h2>Not logged in</h2>
-                    <p>Please <a href="/login">login</a> to see more content.</p>
-                  </div>
-                )}
-              </div>
-            } />
-            <Route path="/minimal" element={<MinimalApp />} />
-          </>
-        )}
-        
-        {/* Fallback route - will work even if providers fail */}
-        <Route path="/minimal" element={<MinimalApp />} />
-        
-        {/* Catch-all route - always render MinimalApp */}
-        <Route path="*" element={<MinimalApp />} />
-      </Routes>
-    </>
-=======
+  const { currentUser, loading } = useAuth();
+  const { isOnboarded, onboardingComplete, openOnboarding } = useOnboarding();
+
   // Check if the current route is the homepage
   const isHomePage = location.pathname === '/';
   // Check if we're in a chat - don't show navbar in chat screens
@@ -322,8 +268,77 @@ const AppContent = () => {
   // Show header on all screens except auth screens
   const showHeader = !isAuthScreen;
   
+  // Show a special UI when the app is in "minimal" mode
+  // This is useful for development and demos
+  if (location.pathname.startsWith('/minimal')) {
+    return <MinimalApp />;
+  }
+
+  // If we're still loading auth, show a simple loading screen
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <p>Loading TedList...</p>
+      </div>
+    );
+  }
+  
+  // In development mode, we can add a fast login option
+  // This lets us test the app without having to go through the login flow
+  if (process.env.NODE_ENV === 'development' && FEATURES.USE_DEBUG && 
+      !currentUser && isAuthScreen) {
+    return (
+      <>
+        <Routes>
+          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/signup" element={<SignupScreen />} />
+          
+          {/* In dev mode, redirect to login for any other route when not authenticated */}
+          <Route path="*" element={<Navigate to="/login" />} />
+        </Routes>
+        
+        {/* Debug UI for fast login in dev mode */}
+        <div style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 1000 }}>
+          <button
+            style={{
+              background: '#ff4081',
+              color: 'white',
+              border: 'none',
+              borderRadius: 4,
+              padding: '8px 16px',
+              cursor: 'pointer'
+            }}
+            onClick={() => {
+              // Create a demo user and manually set it
+              const demoUser = {
+                id: 'dev-user-1',
+                username: 'dev_user',
+                email: 'dev@example.com',
+                profileImage: 'https://randomuser.me/api/portraits/lego/1.jpg',
+                isAdmin: true
+              };
+              
+              // Check if setCurrentUser is available
+              if (typeof setCurrentUser === 'function') {
+                setCurrentUser(demoUser);
+              } else {
+                // Fallback - store in localStorage
+                localStorage.setItem('tedlistUser', JSON.stringify(demoUser));
+                localStorage.setItem('tedlistAuthToken', 'dev-token-123');
+                // Reload the app to pick up the localStorage changes
+                window.location.href = '/';
+              }
+            }}
+          >
+            Dev Mode: Skip Login
+          </button>
+        </div>
+      </>
+    );
+  }
+  
   return (
-    <AppContainer>
+    <>
       {showHeader && <Header />}
       <MainContent>
         <Routes>
@@ -335,7 +350,9 @@ const AppContent = () => {
           <Route 
             path="/" 
             element={
-              currentUser ? <HomeScreen /> : <Navigate to="/login" />
+              <PrivateRoute>
+                <HomeScreen />
+              </PrivateRoute>
             } 
           />
           <Route 
@@ -343,6 +360,14 @@ const AppContent = () => {
             element={
               <PrivateRoute>
                 <SwipeScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/history" 
+            element={
+              <PrivateRoute>
+                <SwipeHistoryScreen />
               </PrivateRoute>
             } 
           />
@@ -374,7 +399,7 @@ const AppContent = () => {
             path="/messages" 
             element={
               <PrivateRoute>
-                <MessageScreen />
+                <MessagesScreen />
               </PrivateRoute>
             } 
           />
@@ -386,42 +411,25 @@ const AppContent = () => {
               </PrivateRoute>
             } 
           />
+          
+          {/* Admin routes */}
           <Route 
-            path="/trade" 
+            path="/admin/*" 
             element={
-              <PrivateRoute>
-                <TradePage />
-              </PrivateRoute>
+              <AdminRoute>
+                <div>Admin Dashboard (Coming soon)</div>
+              </AdminRoute>
             } 
           />
-          <Route 
-            path="/trade/swipe/:itemId" 
-            element={
-              <PrivateRoute>
-                <TradeSwipe />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/share/:id" 
-            element={
-              <PrivateRoute>
-                <ShareScreen />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/share" 
-            element={
-              <PrivateRoute>
-                <ShareScreen />
-              </PrivateRoute>
-            } 
-          />
+          
+          {/* Special routes for development and demos */}
+          <Route path="/minimal" element={<MinimalApp />} />
+          
+          {/* Catch-all route - always render MinimalApp */}
+          <Route path="*" element={<MinimalApp />} />
         </Routes>
       </MainContent>
-    </AppContainer>
->>>>>>> temp-branch
+    </>
   );
 };
 
@@ -437,7 +445,12 @@ const AppContainer = styled.div`
   }
 `;
 
-<<<<<<< HEAD
+const MainContent = styled.main`
+  flex: 1;
+  margin-top: 60px; /* Space for the fixed header */
+  padding: 20px;
+`;
+
 // Function to wrap content with appropriate providers based on feature flags
 const withProviders = (children) => {
   let result = children;
@@ -487,15 +500,6 @@ const App = () => {
     }
   }, [appReady, providerLoading]);
   
-=======
-const MainContent = styled.main`
-  flex: 1;
-  margin-top: 60px; /* Space for the fixed header */
-  padding: 20px;
-`;
-
-function App() {
->>>>>>> temp-branch
   return (
     <AppContainer>
       <ThemeProvider theme={theme}>

@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-<<<<<<< HEAD
-import { FaHeart, FaTimes, FaFilter, FaExchangeAlt, FaToggleOn, FaToggleOff, FaRedo, FaList } from 'react-icons/fa';
-=======
 import { FaArrowLeft, FaHeart, FaTimes, FaInfo, FaHandshake, FaShoppingCart, FaTag, FaPlusCircle, FaUser, FaFilter } from 'react-icons/fa/index.js';
->>>>>>> temp-branch
 import theme from '../../styles/theme';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTradeInteraction } from '../../contexts/TradeInteractionContext';
@@ -118,9 +114,6 @@ const SwipeContainer = styled.div`
   }
 `;
 
-<<<<<<< HEAD
-const Card = styled.div`
-=======
 const CardsContainer = styled.div`
   width: 100%;
   max-width: 350px;
@@ -139,28 +132,16 @@ const SwipeCard = styled.div.attrs(props => ({
     transform: `translateX(${props.offset || 0}px) rotate(${(props.offset || 0) * 0.1}deg)`,
   }
 }))`
->>>>>>> temp-branch
   position: absolute;
   width: 100%;
   height: 100%;
   border-radius: ${theme.borderRadius.large};
   background-color: white;
   overflow: hidden;
-<<<<<<< HEAD
-  box-shadow: ${theme.shadows.medium};
-  transition: transform 0.3s;
-  cursor: grab;
-  transform: translateX(${props => props.offset}px) rotate(${props => props.offset * 0.1}deg);
-  
-  &:active {
-    cursor: grabbing;
-  }
-=======
   transition: transform 0.3s ease;
   opacity: ${props => props.isActive ? 1 : 0};
   visibility: ${props => props.isActive ? 'visible' : 'hidden'};
   pointer-events: ${props => props.isActive ? 'auto' : 'none'};
->>>>>>> temp-branch
 `;
 
 const CardImage = styled.div`
@@ -316,8 +297,6 @@ const Button = styled.button`
   }
 `;
 
-<<<<<<< HEAD
-=======
 // Sample items for swiping
 const sampleItems = [
   {
@@ -385,7 +364,6 @@ const sampleItems = [
   }
 ];
 
->>>>>>> temp-branch
 const SwipeScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -604,106 +582,6 @@ const SwipeScreen = () => {
           </FilterButton>
         </div>
       </Header>
-<<<<<<< HEAD
-      
-      <FiltersContainer show={showFilters}>
-        <FilterOption>
-          <FilterLabel>
-            <input 
-              type="radio" 
-              name="filterType" 
-              value="all" 
-              checked={filterType === 'all'} 
-              onChange={() => setFilterType('all')} 
-            />
-            All Items
-          </FilterLabel>
-        </FilterOption>
-        <FilterOption>
-          <FilterLabel>
-            <input 
-              type="radio" 
-              name="filterType" 
-              value="trade" 
-              checked={filterType === 'trade'} 
-              onChange={() => setFilterType('trade')} 
-            />
-            Only Trade Items
-          </FilterLabel>
-        </FilterOption>
-        <FilterOption>
-          <FilterLabel>
-            <input 
-              type="radio" 
-              name="filterType" 
-              value="sale" 
-              checked={filterType === 'sale'} 
-              onChange={() => setFilterType('sale')} 
-            />
-            Only For Sale
-          </FilterLabel>
-        </FilterOption>
-      </FiltersContainer>
-      
-      <ToggleContainer>
-        <ToggleLabel>Hide my items</ToggleLabel>
-        <ToggleButton 
-          active={hideMyItems} 
-          onClick={toggleHideMyItems}
-        >
-          {hideMyItems ? <FaToggleOn /> : <FaToggleOff />}
-        </ToggleButton>
-      </ToggleContainer>
-      
-      {items.length > 0 && currentIndex < items.length ? (
-        <>
-          <SwipeContainer>
-            <Card offset={offset}>
-              <SwipeIndicator like visible={showLikeMessage}>
-                {currentItem.listingType === 'trade' ? 'OFFER TRADE' : 'INTERESTED'}
-              </SwipeIndicator>
-              <SwipeIndicator visible={showDislikeMessage}>
-                PASS
-              </SwipeIndicator>
-              <CardImage src={currentItem.images[0]} />
-              <CardContent>
-                <CardTitle>{currentItem.title}</CardTitle>
-                <CardPrice>{currentItem.price}</CardPrice>
-                <CardDescription>{currentItem.description}</CardDescription>
-                <CardOwner>Posted by {currentItem.owner}</CardOwner>
-                
-                {/* User can also click to view item details */}
-                <Button onClick={() => navigate(`/items/${currentItem.id}`)}>
-                  View Details
-                </Button>
-              </CardContent>
-            </Card>
-          </SwipeContainer>
-          
-          <ActionButtons>
-            <DislikeButton onClick={() => handleSwipe('left')} disabled={isAnimating}>
-              <FaTimes />
-            </DislikeButton>
-            <LikeButton onClick={() => handleSwipe('right')} disabled={isAnimating}>
-              {currentItem.listingType === 'trade' ? <FaExchangeAlt /> : <FaHeart />}
-            </LikeButton>
-          </ActionButtons>
-        </>
-      ) : (
-        <EmptyState>
-          <EmptyStateIcon>
-            {filterType === 'trade' ? <FaExchangeAlt /> : <FaHeart />}
-          </EmptyStateIcon>
-          <EmptyStateTitle>No more items to show</EmptyStateTitle>
-          <EmptyStateMessage>
-            {items.length === 0 
-              ? `No ${filterType === 'trade' ? 'trade' : filterType === 'sale' ? 'sale' : ''} items found. Try adjusting your filters or check back later.`
-              : `You've seen all ${filterType === 'trade' ? 'trade' : filterType === 'sale' ? 'sale' : ''} items for now. Check your swipe history to revisit items.`
-            }
-          </EmptyStateMessage>
-        </EmptyState>
-      )}
-=======
 
       <SwipeContainer>
         {items.length > 0 && !swipedAll ? (
@@ -769,7 +647,6 @@ const SwipeScreen = () => {
           </EmptyState>
         )}
       </SwipeContainer>
->>>>>>> temp-branch
     </Container>
   );
 };
