@@ -8,14 +8,10 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^13.5.0",
-<<<<<<< HEAD
-    "axios": "^1.6.2",
-=======
     "assert": "^2.1.0",
     "axios": "^1.8.4",
     "https-browserify": "^1.0.0",
     "ky": "^1.8.1",
->>>>>>> temp-branch
     "react": "^18.2.0",
     "react-confetti": "^6.1.0",
     "react-dom": "^18.2.0",
@@ -33,16 +29,10 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-<<<<<<< HEAD
-    "start": "react-scripts start",
-    "build": "GENERATE_SOURCEMAP=false react-scripts build && node build-script.js",
-    "build:windows": "set \"GENERATE_SOURCEMAP=false\" && react-scripts build && node build-script.js",
-    "test": "react-scripts test",
-=======
     "start": "craco start",
     "build": "craco build",
+    "build:windows": "set \"GENERATE_SOURCEMAP=false\" && craco build && node build-script.js",
     "test": "craco test",
->>>>>>> temp-branch
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
