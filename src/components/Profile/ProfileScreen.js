@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+<<<<<<< HEAD
 import { FaCamera, FaPen, FaSignOutAlt, FaUserPlus, FaTrophy } from 'react-icons/fa';
+=======
+import { FaCamera, FaPen, FaSignOutAlt } from 'react-icons/fa/index.js';
+>>>>>>> temp-branch
 import { useAuth } from '../../contexts/AuthContext';
 import { useOnboarding, ONBOARDING_STEPS } from '../../contexts/OnboardingContext';
 import theme from '../../styles/theme';
+<<<<<<< HEAD
 import InviteFriendModal from './InviteFriendModal';
+=======
+import { ItemService, UserService } from '../../services';
+>>>>>>> temp-branch
 
 const Container = styled.div`
   padding-bottom: 80px;
@@ -321,28 +329,52 @@ const ProfileScreen = () => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [username, setUsername] = useState('');
   const [profileImage, setProfileImage] = useState('');
+  const [loading, setLoading] = useState(true);
   const fileInputRef = React.useRef(null);
   
   useEffect(() => {
-    // Load user items from localStorage
-    const loadItems = () => {
+    const loadUserData = async () => {
       try {
-        const savedItems = localStorage.getItem('tedlistItems');
+        setLoading(true);
         
-        if (savedItems) {
-          const parsedItems = JSON.parse(savedItems);
-          setItems(parsedItems);
+        if (currentUser) {
+          // Set initial profile data
+          setUsername(currentUser.username);
+          setProfileImage(currentUser.profileImage);
+          
+          // Get the proper user ID (MongoDB uses _id)
+          const userId = currentUser.id || currentUser._id;
+          
+          if (!userId) {
+            console.error('Current user has no valid ID:', currentUser);
+            return;
+          }
+          
+          // Fetch user's items from the backend, passing the userId
+          try {
+            const response = await ItemService.getUserItems(userId);
+            
+            if (response && response.items) {
+              setItems(response.items);
+            } else {
+              console.error('Error fetching user items:', response);
+              // Set empty array as fallback
+              setItems([]);
+            }
+          } catch (itemError) {
+            console.error('Error fetching user items:', itemError);
+            // Set empty array as fallback
+            setItems([]);
+          }
         }
       } catch (error) {
-        console.error('Error loading items:', error);
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
       }
     };
     
-    if (currentUser) {
-      setUsername(currentUser.username);
-      setProfileImage(currentUser.profileImage);
-      loadItems();
-    }
+    loadUserData();
   }, [currentUser]);
   
   const handleLogout = async () => {
@@ -369,11 +401,24 @@ const ProfileScreen = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result);
-      };
-      reader.readAsDataURL(file);
+      // Compress image before conversion
+      UserService.compressImage(file, 0.7)
+        .then(compressedFile => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setProfileImage(reader.result);
+          };
+          reader.readAsDataURL(compressedFile);
+        })
+        .catch(error => {
+          console.error('Error compressing image:', error);
+          // Fallback to original file
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setProfileImage(reader.result);
+          };
+          reader.readAsDataURL(file);
+        });
     }
   };
   
@@ -381,11 +426,12 @@ const ProfileScreen = () => {
     e.preventDefault();
     
     try {
-      await updateProfile({
+      const result = await updateProfile({
         username,
         profileImage
       });
       
+<<<<<<< HEAD
       setShowEditModal(false);
       
       // Check if this completes the profile step for onboarding
@@ -394,9 +440,14 @@ const ProfileScreen = () => {
         if (username && (profileImage || currentUser.profileImage)) {
           completeStep(ONBOARDING_STEPS.COMPLETE_PROFILE);
         }
+=======
+      if (result) {
+        setShowEditModal(false);
+>>>>>>> temp-branch
       }
     } catch (error) {
       console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
     }
   };
   
@@ -407,11 +458,11 @@ const ProfileScreen = () => {
   // Filter items based on active tab
   const filteredItems = items.filter(item => {
     if (activeTab === 'listings') {
-      return true; // Show all
+      return true; // Show all user items
     } else if (activeTab === 'trades') {
       return item.listingType === 'trade';
     } else if (activeTab === 'sold') {
-      return item.sold;
+      return item.status === 'sold';
     }
     return false;
   });
@@ -420,7 +471,7 @@ const ProfileScreen = () => {
     <Container>
       <ProfileHeader>
         <ProfileImageContainer>
-          <ProfileImage src={profileImage} />
+          <ProfileImage src={profileImage || 'https://randomuser.me/api/portraits/lego/1.jpg'} />
           <AddPhotoButton onClick={handleImageClick}>
             <FaCamera size={16} />
           </AddPhotoButton>
@@ -432,8 +483,12 @@ const ProfileScreen = () => {
             onChange={handleImageChange}
           />
         </ProfileImageContainer>
-        <ProfileName>{username}</ProfileName>
-        <ProfileInfo>Member since {new Date(currentUser?.createdAt || Date.now()).toLocaleDateString()}</ProfileInfo>
+        <ProfileName>{username || 'User'}</ProfileName>
+        <ProfileInfo>
+          Member since {currentUser?.createdAt 
+            ? new Date(currentUser.createdAt).toLocaleDateString() 
+            : new Date().toLocaleDateString()}
+        </ProfileInfo>
         
         <ActionButtons>
           <ActionButton primary onClick={() => setShowEditModal(true)}>
@@ -472,14 +527,20 @@ const ProfileScreen = () => {
         </Tab>
       </Tabs>
       
-      {filteredItems.length > 0 ? (
+      {loading ? (
+        <EmptyState>Loading your items...</EmptyState>
+      ) : filteredItems.length > 0 ? (
         <ItemsGrid>
           {filteredItems.map(item => (
-            <ItemCard key={item.id} onClick={() => handleItemClick(item.id)}>
+            <ItemCard key={item._id} onClick={() => handleItemClick(item._id)}>
               <ItemImage src={item.images && item.images.length > 0 ? item.images[0] : 'https://via.placeholder.com/300'} />
               <ItemInfo>
                 <ItemTitle>{item.title}</ItemTitle>
-                <ItemPrice>{item.price}</ItemPrice>
+                <ItemPrice>
+                  {item.listingType === 'free' ? 'Free' : 
+                   item.listingType === 'trade' ? 'For Trade' : 
+                   `₪ ${item.price}`}
+                </ItemPrice>
               </ItemInfo>
             </ItemCard>
           ))}

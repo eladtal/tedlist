@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaEnvelope, FaLock, FaTimes } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaTimes } from 'react-icons/fa/index.js';
 import { useAuth } from '../../contexts/AuthContext';
 import theme from '../../styles/theme';
+import { AuthService } from '../../services';
 
 const Container = styled.div`
   display: flex;
@@ -144,19 +145,33 @@ const LoginScreen = () => {
     
     try {
       setLoading(true);
-      await login(email, password);
       
-      // Redirect to home on success
-      navigate('/');
+      // Call the login function with email and password
+      const user = await login(email, password);
+      
+      if (user) {
+        // Redirect to home on success
+        navigate('/');
+      } else {
+        setError('Login failed. Please check your credentials.');
+      }
     } catch (error) {
       console.error('Login error:', error);
+<<<<<<< HEAD
       setError(error.message || 'Failed to log in. Please check your credentials.');
+=======
+      setError(error.message || 'Failed to login. Please try again.');
+>>>>>>> temp-branch
     } finally {
       setLoading(false);
     }
   };
   
+<<<<<<< HEAD
   // Demo login now uses the API with a predefined account
+=======
+  // Demo login (using our API service now)
+>>>>>>> temp-branch
   const handleDemoLogin = async () => {
     try {
       setLoading(true);
@@ -164,11 +179,49 @@ const LoginScreen = () => {
       const demoEmail = 'demo@tedlist.com';
       const demoPassword = 'demopassword';
       
+<<<<<<< HEAD
       await login(demoEmail, demoPassword);
       navigate('/');
     } catch (error) {
       console.error('Demo login error:', error);
       setError('Demo account login failed. Please try regular login.');
+=======
+      // First try to login with demo credentials
+      try {
+        const user = await login(demoEmail, demoPassword);
+        if (user) {
+          // Login successful, redirect to home
+          navigate('/');
+          return;
+        }
+      } catch (loginError) {
+        console.log('Demo user does not exist yet, creating...');
+      }
+      
+      // If login failed, try to register the demo user
+      const demoUser = {
+        email: demoEmail,
+        password: demoPassword,
+        username: 'Demo User',
+      };
+      
+      const response = await AuthService.register(demoUser);
+      
+      if (response.success) {
+        // Registration successful, now login
+        const user = await login(demoEmail, demoPassword);
+        if (user) {
+          navigate('/');
+        } else {
+          throw new Error('Failed to login after creating demo account');
+        }
+      } else {
+        throw new Error(response.error || 'Failed to create demo account');
+      }
+    } catch (error) {
+      console.error('Demo login error:', error);
+      setError(error.message || 'Failed to access demo account');
+>>>>>>> temp-branch
     } finally {
       setLoading(false);
     }

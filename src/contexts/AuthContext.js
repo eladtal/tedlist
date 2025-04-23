@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+<<<<<<< HEAD
 import { 
   registerUser, 
   loginUser, 
@@ -6,6 +7,9 @@ import {
   getCurrentUser, 
   updatePassword
 } from '../services/auth.service';
+=======
+import { AuthService } from '../services';
+>>>>>>> temp-branch
 
 // Create the auth context
 const AuthContext = createContext();
@@ -15,10 +19,26 @@ export const useAuth = () => {
   return useContext(AuthContext);
 };
 
+// Helper function to normalize user object to ensure it has an 'id' property
+const normalizeUser = (user) => {
+  if (!user) return null;
+  
+  // Create a new object to avoid mutating the original
+  const normalizedUser = { ...user };
+  
+  // Ensure user has an id property (MongoDB uses _id)
+  if (!normalizedUser.id && normalizedUser._id) {
+    normalizedUser.id = normalizedUser._id;
+  }
+  
+  return normalizedUser;
+};
+
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   
+<<<<<<< HEAD
   // Function to set current user data
   const setUserData = (userData, token) => {
     setCurrentUser(userData);
@@ -77,6 +97,44 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           console.error('Error loading user data:', error);
           localStorage.removeItem('tedlistAuthToken');
+=======
+  // Set current user with normalization
+  const setNormalizedUser = (user) => {
+    const normalizedUser = normalizeUser(user);
+    setCurrentUser(normalizedUser);
+    
+    // Also update localStorage if needed
+    if (normalizedUser) {
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
+    }
+  };
+  
+  // Check if user is already logged in (from token)
+  useEffect(() => {
+    const checkLoggedInUser = async () => {
+      try {
+        // Get user from localStorage (saved by AuthService)
+        const savedUser = AuthService.getCurrentUser();
+        
+        if (savedUser && AuthService.isAuthenticated()) {
+          // Set the current user from localStorage initially (normalized)
+          setNormalizedUser(savedUser);
+          
+          // If we have a token, verify it by fetching current user data
+          try {
+            const response = await AuthService.fetchCurrentUser();
+            if (response.success) {
+              setNormalizedUser(response.data);
+            } else {
+              // If token is invalid, log out
+              AuthService.logout();
+              setCurrentUser(null);
+            }
+          } catch (error) {
+            console.error('Error fetching user data:', error);
+            // Don't log out on connection errors, so app can work offline
+          }
+>>>>>>> temp-branch
         }
       } catch (error) {
         console.error('Error in auth check:', error);
@@ -91,9 +149,10 @@ export const AuthProvider = ({ children }) => {
     return () => clearTimeout(forceComplete);
   }, []);
   
-  // Sign up function
+  // Register a new user
   const signup = async (email, password, username, profileImage = null) => {
     try {
+<<<<<<< HEAD
       // Development mode - simplified signup
       if (process.env.NODE_ENV === 'development') {
         const userData = {
@@ -126,6 +185,31 @@ export const AuthProvider = ({ children }) => {
       }
       
       return response.user;
+=======
+      console.log('Registering user with production backend on tedlist.onrender.com');
+      const userData = {
+        email,
+        username,
+        password
+      };
+      
+      // Use the AuthService to register the user
+      const result = await AuthService.register(userData);
+      
+      if (result.success) {
+        // Set current user from the response (normalized)
+        setNormalizedUser(result.user);
+        
+        // If profile image was provided, update it
+        if (profileImage) {
+          await updateProfile({ profileImage });
+        }
+        
+        return normalizeUser(result.user);
+      } else {
+        throw new Error(result.error || 'Failed to create account');
+      }
+>>>>>>> temp-branch
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
@@ -135,6 +219,7 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = async (email, password) => {
     try {
+<<<<<<< HEAD
       // Development mode - simplified login
       if (process.env.NODE_ENV === 'development') {
         const userData = {
@@ -160,6 +245,24 @@ export const AuthProvider = ({ children }) => {
       }
       
       return response.user;
+=======
+      console.log('Logging in with production backend on tedlist.onrender.com');
+      const result = await AuthService.login(email, password);
+      
+      if (result.success) {
+        // Set current user from the response (normalized)
+        setNormalizedUser(result.user);
+        
+        // If this is a demo login, show a notification
+        if (result.demo) {
+          console.warn('Using demo login as fallback - production server unreachable');
+        }
+        
+        return normalizeUser(result.user);
+      } else {
+        throw new Error(result.error || 'Invalid credentials');
+      }
+>>>>>>> temp-branch
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -168,6 +271,7 @@ export const AuthProvider = ({ children }) => {
   
   // Logout function
   const logout = () => {
+<<<<<<< HEAD
     // Use the API service to logout
     logoutUser();
     clearUserData();
@@ -177,6 +281,14 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (profileData) => {
     if (!currentUser) return null;
     
+=======
+    AuthService.logout();
+    setCurrentUser(null);
+  };
+  
+  // Update profile function
+  const updateProfile = async (updates) => {
+>>>>>>> temp-branch
     try {
       if (process.env.NODE_ENV === 'development') {
         // In development, just update the local user data
@@ -185,6 +297,7 @@ export const AuthProvider = ({ children }) => {
         return updatedUser;
       }
       
+<<<<<<< HEAD
       try {
         // Try to update via API using our apiService
         const apiService = await import('../services/api').then(module => module.default);
@@ -209,6 +322,20 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Profile update error:', error);
+=======
+      // Use the AuthService to update profile
+      const response = await AuthService.updateProfile(updates);
+      
+      if (response.success) {
+        // Update context state with new user data
+        setNormalizedUser(response.data);
+        return normalizeUser(response.data);
+      } else {
+        throw new Error(response.error || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Update profile error:', error);
+>>>>>>> temp-branch
       throw error;
     }
   };

@@ -1,12 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaCamera, FaTimes, FaArrowLeft, FaCheckCircle, FaUpload, FaTag, FaHandshake } from 'react-icons/fa';
+import { FaCamera, FaTimes, FaExclamationCircle, FaCheckCircle, FaArrowLeft, FaUpload, FaTag, FaHandshake } from 'react-icons/fa/index.js';
 import theme from '../../styles/theme';
+<<<<<<< HEAD
 import { useAuth } from '../../contexts/AuthContext';
 import { useOnboarding, ONBOARDING_STEPS } from '../../contexts/OnboardingContext';
 import { createItem } from '../../services/item.service';
 import { uploadImages, formatItemForApi } from '../../services/upload.service';
+=======
+import { ItemService } from '../../services';
+import { useAuth } from '../../contexts/AuthContext';
+import { compressImage, fileToBase64 } from '../../utils/image-utils';
+>>>>>>> temp-branch
 
 const Container = styled.div`
   padding: ${theme.spacing.md};
@@ -294,7 +300,9 @@ const initialFormState = {
   price: '',
   location: '',
   category: '',
-  listingType: 'sale' // Default to sale
+  listingType: 'sale', // Default to sale
+  condition: '',
+  tags: ''
 };
 
 // Initial errors state
@@ -304,7 +312,9 @@ const initialErrors = {
   price: '',
   location: '',
   category: '',
-  photos: ''
+  photos: '',
+  condition: '',
+  tags: ''
 };
 
 const UploadScreen = () => {
@@ -317,8 +327,17 @@ const UploadScreen = () => {
   const [photos, setPhotos] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successSubmission, setSuccessSubmission] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
+<<<<<<< HEAD
   
+=======
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser } = useAuth();
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+>>>>>>> temp-branch
   // Set initial listing type based on navigation state if present
   useEffect(() => {
     if (location.state?.listingType) {
@@ -360,35 +379,68 @@ const UploadScreen = () => {
     }
   };
   
-  const handlePhotoChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newPhotos = [...photos];
-      
-      for (let i = 0; i < e.target.files.length; i++) {
-        if (newPhotos.length < 5) {
-          const file = e.target.files[i];
-          const reader = new FileReader();
-          
-          reader.onload = (event) => {
-            newPhotos.push(event.target.result);
-            setPhotos([...newPhotos]);
-            
-            // Clear photo error if we have at least one photo
-            if (newPhotos.length > 0) {
-              setErrors({
-                ...errors,
-                photos: ''
-              });
-            }
-          };
-          
-          reader.readAsDataURL(file);
-        }
+  const handlePhotoChange = async (e) => {
+    try {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Check file type
+      if (!file.type.match('image.*')) {
+        console.error('Please select an image file');
+        return;
       }
+
+      // Check file size (max 10MB before compression)
+      if (file.size > 10 * 1024 * 1024) {
+        console.error('Image is too large (max 10MB)');
+        return;
+      }
+
+      setUploadingPhoto(true);
+
+      try {
+        // Compress the image with error handling
+        const compressedBlob = await compressImage(file, 0.7);
+        
+        // Convert compressed blob to a File object
+        const compressedFile = new File([compressedBlob], file.name, { 
+          type: file.type,
+          lastModified: new Date().getTime()
+        });
+        
+        // Convert to base64 for preview
+        const base64 = await fileToBase64(compressedFile);
+        
+        // Add photo to state
+        setPhotos(prevPhotos => [...prevPhotos, {
+          file: compressedFile,
+          preview: base64,
+          uploading: false,
+          progress: 100
+        }]);
+        
+        // Reset file input
+        e.target.value = '';
+      } catch (err) {
+        console.error('Error processing image:', err);
+        
+        // Fallback to basic handling if compression fails
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setPhotos(prevPhotos => [...prevPhotos, {
+            file: file,
+            preview: e.target.result,
+            uploading: false,
+            progress: 100
+          }]);
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (error) {
+      console.error('Error handling photo:', error);
+    } finally {
+      setUploadingPhoto(false);
     }
-    
-    // Reset file input
-    e.target.value = null;
   };
   
   const handleDeletePhoto = (index) => {
@@ -439,6 +491,18 @@ const UploadScreen = () => {
       isValid = false;
     }
     
+    // Condition validation
+    if (!formState.condition.trim()) {
+      newErrors.condition = 'Condition is required';
+      isValid = false;
+    }
+    
+    // Tags validation
+    if (!formState.tags.trim()) {
+      newErrors.tags = 'Tags are required';
+      isValid = false;
+    }
+    
     // Photo validation
     if (photos.length === 0) {
       newErrors.photos = 'At least one photo is required';
@@ -462,13 +526,25 @@ const UploadScreen = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    // Validate form
+    const formErrors = validateForm();
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
+      
+      // Scroll to first error
+      const firstErrorField = Object.keys(formErrors)[0];
+      const errorElement = document.getElementById(firstErrorField);
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        errorElement.focus();
+      }
       return;
     }
     
     setIsSubmitting(true);
     
     try {
+<<<<<<< HEAD
       // Format price based on listing type
       const priceDisplay = formState.listingType === 'free' 
         ? 'Free' 
@@ -525,17 +601,58 @@ const UploadScreen = () => {
         // Complete the upload item onboarding step
         completeStep(ONBOARDING_STEPS.UPLOAD_ITEM);
       }
+=======
+      // Process photos for API submission
+      console.log('Processing photos for upload to tedlist.onrender.com');
+      const processedPhotosResult = await ItemService.processPhotos(photos);
+      
+      if (!processedPhotosResult.success) {
+        throw new Error(processedPhotosResult.error || 'Failed to process photos');
+      }
+      
+      console.log(`Successfully processed ${processedPhotosResult.data.length} photos for tedlist.onrender.com`);
+      
+      // Create item data object
+      const itemData = {
+        title: formState.title,
+        description: formState.description,
+        category: formState.category,
+        location: formState.location,
+        listingType: formState.listingType,
+        price: formState.listingType === 'sale' ? parseFloat(formState.price) : undefined,
+        condition: formState.condition,
+        images: processedPhotosResult.data,
+        tags: formState.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        userId: currentUser?.id || currentUser?._id // Ensure we're using the correct user ID field
+      };
+      
+      console.log('Submitting item data to tedlist.onrender.com:', itemData);
+      
+      // Create item using the service
+      const result = await ItemService.createItem(itemData);
+      
+      console.log('tedlist.onrender.com item creation result:', result);
+>>>>>>> temp-branch
       
       // Show success message
       setSuccessSubmission(true);
       
-      // Reset form after 2 seconds, then redirect to profile
+      // Redirect after delay
       setTimeout(() => {
+<<<<<<< HEAD
         navigate('/profile', { state: { newItemAdded: true } });
       }, 2000);
     } catch (error) {
       console.error('Error uploading item:', error);
       alert('Failed to upload item. Please try again.');
+=======
+        navigate('/profile');
+      }, 2000);
+    } catch (error) {
+      console.error('Error creating item in MongoDB:', error);
+      alert('There was an error posting your item. Please try again.');
+    } finally {
+>>>>>>> temp-branch
       setIsSubmitting(false);
     }
   };
@@ -577,7 +694,7 @@ const UploadScreen = () => {
           <Label htmlFor="photos">Photos</Label>
           <PhotosContainer>
             {photos.map((photo, index) => (
-              <PhotoPreview key={index} src={photo}>
+              <PhotoPreview key={index} src={photo.preview}>
                 <DeletePhotoButton onClick={() => handleDeletePhoto(index)}>
                   <FaTimes />
                 </DeletePhotoButton>
@@ -628,6 +745,34 @@ const UploadScreen = () => {
             error={errors.description}
           />
           {errors.description && <ErrorText>{errors.description}</ErrorText>}
+        </FormGroup>
+        
+        <FormGroup>
+          <Label htmlFor="condition">Condition</Label>
+          <Input 
+            type="text" 
+            id="condition" 
+            name="condition" 
+            value={formState.condition} 
+            onChange={handleInputChange} 
+            placeholder="What is the condition of your item?"
+            error={errors.condition}
+          />
+          {errors.condition && <ErrorText>{errors.condition}</ErrorText>}
+        </FormGroup>
+        
+        <FormGroup>
+          <Label htmlFor="tags">Tags</Label>
+          <Input 
+            type="text" 
+            id="tags" 
+            name="tags" 
+            value={formState.tags} 
+            onChange={handleInputChange} 
+            placeholder="Enter tags separated by commas"
+            error={errors.tags}
+          />
+          {errors.tags && <ErrorText>{errors.tags}</ErrorText>}
         </FormGroup>
         
         {formState.listingType === 'sale' && (
@@ -685,11 +830,19 @@ const UploadScreen = () => {
         
         <SubmitButton 
           type="submit" 
-          disabled={isSubmitting}
+          disabled={isSubmitting || !currentUser}
           listingType={formState.listingType}
         >
-          {isSubmitting ? 'Posting...' : formState.listingType === 'trade' ? 'Post for Trading' : 'List for Sale'}
+          {isSubmitting ? 
+            `Uploading... ${uploadProgress}%` : 
+            formState.listingType === 'trade' ? 'Post for Trading' : 'List for Sale'}
         </SubmitButton>
+        
+        {!currentUser && (
+          <ErrorText style={{ textAlign: 'center', marginTop: '8px' }}>
+            You must be logged in to post an item. Please log in or sign up.
+          </ErrorText>
+        )}
       </Form>
       
       {successSubmission && (

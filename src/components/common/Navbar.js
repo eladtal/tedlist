@@ -1,7 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Link, useLocation } from 'react-router-dom';
+<<<<<<< HEAD
 import { FaHome, FaExchangeAlt, FaPlus, FaEnvelope, FaUser, FaUserShield } from 'react-icons/fa';
+=======
+import { FaHome, FaExchangeAlt, FaPlus, FaEnvelope, FaUser } from 'react-icons/fa/index.js';
+>>>>>>> temp-branch
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdmin } from '../../contexts/AdminContext';
 import { useNotifications } from '../../contexts/NotificationContext';

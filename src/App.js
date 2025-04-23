@@ -1,10 +1,15 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+=======
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom/dist/index.js';
+>>>>>>> temp-branch
 import { ThemeProvider } from 'styled-components';
 import styled from 'styled-components';
 import theme from './styles/theme';
 import GlobalStyles from './styles/GlobalStyles';
-import Navbar from './components/common/Navbar';
+import Header from './components/common/Header';
 import HomeScreen from './components/Home/HomeScreen';
 import SwipeScreen from './components/Swipe/SwipeScreen';
 import SwipeHistoryScreen from './components/Swipe/SwipeHistoryScreen';
@@ -236,6 +241,7 @@ const AppContent = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
   
+<<<<<<< HEAD
   // Routes that don't need a navbar
   const noNavbarRoutes = ['/login', '/signup', '/onboarding'];
   const shouldShowNavbar = !noNavbarRoutes.includes(location.pathname);
@@ -303,6 +309,119 @@ const AppContent = () => {
         <Route path="*" element={<MinimalApp />} />
       </Routes>
     </>
+=======
+  // Check if the current route is the homepage
+  const isHomePage = location.pathname === '/';
+  // Check if we're in a chat - don't show navbar in chat screens
+  const isChatScreen = location.pathname.includes('/messages/');
+  // Check if we're in share screen - don't show navbar
+  const isShareScreen = location.pathname.includes('/share/');
+  // Check if we're on auth screens
+  const isAuthScreen = location.pathname === '/login' || location.pathname === '/signup';
+  
+  // Show header on all screens except auth screens
+  const showHeader = !isAuthScreen;
+  
+  return (
+    <AppContainer>
+      {showHeader && <Header />}
+      <MainContent>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/signup" element={<SignupScreen />} />
+          
+          {/* Protected routes */}
+          <Route 
+            path="/" 
+            element={
+              currentUser ? <HomeScreen /> : <Navigate to="/login" />
+            } 
+          />
+          <Route 
+            path="/swipe" 
+            element={
+              <PrivateRoute>
+                <SwipeScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/items/:id" 
+            element={
+              <PrivateRoute>
+                <ItemDetailScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/upload" 
+            element={
+              <PrivateRoute>
+                <UploadScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <PrivateRoute>
+                <ProfileScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/messages" 
+            element={
+              <PrivateRoute>
+                <MessageScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/messages/:id" 
+            element={
+              <PrivateRoute>
+                <ChatScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/trade" 
+            element={
+              <PrivateRoute>
+                <TradePage />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/trade/swipe/:itemId" 
+            element={
+              <PrivateRoute>
+                <TradeSwipe />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/share/:id" 
+            element={
+              <PrivateRoute>
+                <ShareScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/share" 
+            element={
+              <PrivateRoute>
+                <ShareScreen />
+              </PrivateRoute>
+            } 
+          />
+        </Routes>
+      </MainContent>
+    </AppContainer>
+>>>>>>> temp-branch
   );
 };
 
@@ -318,6 +437,7 @@ const AppContainer = styled.div`
   }
 `;
 
+<<<<<<< HEAD
 // Function to wrap content with appropriate providers based on feature flags
 const withProviders = (children) => {
   let result = children;
@@ -367,6 +487,15 @@ const App = () => {
     }
   }, [appReady, providerLoading]);
   
+=======
+const MainContent = styled.main`
+  flex: 1;
+  margin-top: 60px; /* Space for the fixed header */
+  padding: 20px;
+`;
+
+function App() {
+>>>>>>> temp-branch
   return (
     <AppContainer>
       <ThemeProvider theme={theme}>

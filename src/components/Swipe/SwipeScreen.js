@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
+<<<<<<< HEAD
 import { FaHeart, FaTimes, FaFilter, FaExchangeAlt, FaToggleOn, FaToggleOff, FaRedo, FaList } from 'react-icons/fa';
+=======
+import { FaArrowLeft, FaHeart, FaTimes, FaInfo, FaHandshake, FaShoppingCart, FaTag, FaPlusCircle, FaUser, FaFilter } from 'react-icons/fa/index.js';
+>>>>>>> temp-branch
 import theme from '../../styles/theme';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTradeInteraction } from '../../contexts/TradeInteractionContext';
@@ -114,13 +118,35 @@ const SwipeContainer = styled.div`
   }
 `;
 
+<<<<<<< HEAD
 const Card = styled.div`
+=======
+const CardsContainer = styled.div`
+  width: 100%;
+  max-width: 350px;
+  height: 100%;
+  max-height: 500px;
+  position: relative;
+  
+  @media (min-width: ${theme.breakpoints.md}) {
+    max-width: 450px;
+    max-height: 600px;
+  }
+`;
+
+const SwipeCard = styled.div.attrs(props => ({
+  style: {
+    transform: `translateX(${props.offset || 0}px) rotate(${(props.offset || 0) * 0.1}deg)`,
+  }
+}))`
+>>>>>>> temp-branch
   position: absolute;
   width: 100%;
   height: 100%;
   border-radius: ${theme.borderRadius.large};
   background-color: white;
   overflow: hidden;
+<<<<<<< HEAD
   box-shadow: ${theme.shadows.medium};
   transition: transform 0.3s;
   cursor: grab;
@@ -129,6 +155,12 @@ const Card = styled.div`
   &:active {
     cursor: grabbing;
   }
+=======
+  transition: transform 0.3s ease;
+  opacity: ${props => props.isActive ? 1 : 0};
+  visibility: ${props => props.isActive ? 'visible' : 'hidden'};
+  pointer-events: ${props => props.isActive ? 'auto' : 'none'};
+>>>>>>> temp-branch
 `;
 
 const CardImage = styled.div`
@@ -207,6 +239,22 @@ const DislikeButton = styled(ActionButton)`
   color: #F44336;
 `;
 
+const SwipeAnimationMessage = styled.div.attrs(props => ({
+  className: props.show ? 'visible' : 'hidden'
+}))`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  opacity: ${props => props.className === 'visible' ? 1 : 0};
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+`;
+
 const EmptyState = styled.div`
   display: flex;
   flex-direction: column;
@@ -268,6 +316,76 @@ const Button = styled.button`
   }
 `;
 
+<<<<<<< HEAD
+=======
+// Sample items for swiping
+const sampleItems = [
+  {
+    id: '1',
+    title: 'Vintage Leather Sofa',
+    price: '₪ 1,200',
+    location: 'Tel Aviv',
+    image: 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
+    listingType: 'sale',
+    isOwner: false
+  },
+  {
+    id: '2',
+    title: 'iPhone 13 Pro - 256GB',
+    price: '₪ 2,800',
+    location: 'Jerusalem',
+    image: 'https://images.unsplash.com/photo-1592286927505-1def25115efb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
+    listingType: 'sale',
+    isOwner: false
+  },
+  {
+    id: '3',
+    title: 'Ceramic Plant Pot Set',
+    price: '₪ 150',
+    location: 'Haifa',
+    image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
+    listingType: 'trade',
+    isOwner: false
+  },
+  {
+    id: '4',
+    title: 'Nikon D850 Camera',
+    price: '₪ 5,500',
+    location: 'Eilat',
+    image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
+    listingType: 'sale',
+    isOwner: false
+  },
+  {
+    id: '5',
+    title: 'Vintage Bicycle',
+    price: '₪ 850',
+    location: 'Be\'er Sheva',
+    image: 'https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
+    listingType: 'trade',
+    isOwner: false
+  },
+  {
+    id: '6',
+    title: 'Antique Wooden Chair',
+    price: 'For Trade',
+    location: 'Tel Aviv',
+    image: 'https://images.unsplash.com/photo-1519947486511-46149fa0a254?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
+    listingType: 'trade',
+    isOwner: false
+  },
+  {
+    id: '7',
+    title: 'Handmade Pottery Collection',
+    price: 'For Trade',
+    location: 'Haifa',
+    image: 'https://images.unsplash.com/photo-1565193298357-c5b64a816c38?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
+    listingType: 'trade',
+    isOwner: false
+  }
+];
+
+>>>>>>> temp-branch
 const SwipeScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -486,6 +604,7 @@ const SwipeScreen = () => {
           </FilterButton>
         </div>
       </Header>
+<<<<<<< HEAD
       
       <FiltersContainer show={showFilters}>
         <FilterOption>
@@ -584,6 +703,73 @@ const SwipeScreen = () => {
           </EmptyStateMessage>
         </EmptyState>
       )}
+=======
+
+      <SwipeContainer>
+        {items.length > 0 && !swipedAll ? (
+          <>
+            <CardsContainer>
+              {items.map((item, index) => (
+                <SwipeCard 
+                  key={item.id} 
+                  isActive={index === currentIndex}
+                  offset={index === currentIndex ? offset : 0}
+                >
+                  <CardImage src={item.image}>
+                    <SwipeAnimationMessage show={!!(showLikeMessage && index === currentIndex)}>
+                      LIKE
+                    </SwipeAnimationMessage>
+                    <SwipeAnimationMessage show={!!(showDislikeMessage && index === currentIndex)}>
+                      NOPE
+                    </SwipeAnimationMessage>
+                    {item.listingType === 'trade' && (
+                      <CardTag>
+                        <FaHandshake /> For Trade
+                      </CardTag>
+                    )}
+                    {item.isOwner && (
+                      <CardOwnerTag>
+                        <FaUser /> Your Item
+                      </CardOwnerTag>
+                    )}
+                    <CardContent>
+                      <CardTitle>{item.title}</CardTitle>
+                      <CardPrice>{item.price}</CardPrice>
+                      <CardLocation>{item.location}</CardLocation>
+                    </CardContent>
+                  </CardImage>
+                </SwipeCard>
+              ))}
+            </CardsContainer>
+
+            <ActionsContainer>
+              <DislikeButton onClick={() => handleSwipe('left')}>
+                <FaTimes />
+              </DislikeButton>
+              
+              <InfoButton onClick={() => items[currentIndex] && viewDetails(items[currentIndex].id)}>
+                <FaInfo />
+              </InfoButton>
+              
+              <LikeButton onClick={() => handleSwipe('right')}>
+                <FaHeart />
+              </LikeButton>
+            </ActionsContainer>
+          </>
+        ) : (
+          <EmptyState>
+            <EmptyStateIcon mode={mode}>
+              {emptyState.icon}
+            </EmptyStateIcon>
+            <EmptyStateTitle>{emptyState.title}</EmptyStateTitle>
+            <EmptyStateText>{emptyState.text}</EmptyStateText>
+            <ActionLink mode={mode} onClick={handleAddItem}>
+              <FaPlusCircle /> {emptyState.action}
+            </ActionLink>
+          </EmptyState>
+        )}
+      </SwipeContainer>
+>>>>>>> temp-branch
     </Container>
   );
 };
