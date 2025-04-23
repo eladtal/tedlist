@@ -1,10 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom/dist/index.js';
 import { ThemeProvider } from 'styled-components';
 import styled from 'styled-components';
 import theme from './styles/theme';
 import GlobalStyles from './styles/GlobalStyles';
-import Navbar from './components/common/Navbar';
+import Header from './components/common/Header';
 import HomeScreen from './components/Home/HomeScreen';
 import SwipeScreen from './components/Swipe/SwipeScreen';
 import ItemDetailScreen from './components/ItemDetail/ItemDetailScreen';
@@ -49,105 +49,107 @@ const AppContent = () => {
   // Check if we're on auth screens
   const isAuthScreen = location.pathname === '/login' || location.pathname === '/signup';
   
-  // Don't show navbar on auth screens or if user is not logged in
-  const showNavbar = !isHomePage && !isChatScreen && !isShareScreen && !isAuthScreen && currentUser;
+  // Show header on all screens except auth screens
+  const showHeader = !isAuthScreen;
   
   return (
     <AppContainer>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<LoginScreen />} />
-        <Route path="/signup" element={<SignupScreen />} />
-        
-        {/* Protected routes */}
-        <Route 
-          path="/" 
-          element={
-            currentUser ? <HomeScreen /> : <Navigate to="/login" />
-          } 
-        />
-        <Route 
-          path="/swipe" 
-          element={
-            <PrivateRoute>
-              <SwipeScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/items/:id" 
-          element={
-            <PrivateRoute>
-              <ItemDetailScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/upload" 
-          element={
-            <PrivateRoute>
-              <UploadScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/profile" 
-          element={
-            <PrivateRoute>
-              <ProfileScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/messages" 
-          element={
-            <PrivateRoute>
-              <MessageScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/messages/:id" 
-          element={
-            <PrivateRoute>
-              <ChatScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/trade" 
-          element={
-            <PrivateRoute>
-              <TradePage />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/trade/swipe/:itemId" 
-          element={
-            <PrivateRoute>
-              <TradeSwipe />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/share/:id" 
-          element={
-            <PrivateRoute>
-              <ShareScreen />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/share" 
-          element={
-            <PrivateRoute>
-              <ShareScreen />
-            </PrivateRoute>
-          } 
-        />
-      </Routes>
-      {showNavbar && <Navbar />}
+      {showHeader && <Header />}
+      <MainContent>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/signup" element={<SignupScreen />} />
+          
+          {/* Protected routes */}
+          <Route 
+            path="/" 
+            element={
+              currentUser ? <HomeScreen /> : <Navigate to="/login" />
+            } 
+          />
+          <Route 
+            path="/swipe" 
+            element={
+              <PrivateRoute>
+                <SwipeScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/items/:id" 
+            element={
+              <PrivateRoute>
+                <ItemDetailScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/upload" 
+            element={
+              <PrivateRoute>
+                <UploadScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <PrivateRoute>
+                <ProfileScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/messages" 
+            element={
+              <PrivateRoute>
+                <MessageScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/messages/:id" 
+            element={
+              <PrivateRoute>
+                <ChatScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/trade" 
+            element={
+              <PrivateRoute>
+                <TradePage />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/trade/swipe/:itemId" 
+            element={
+              <PrivateRoute>
+                <TradeSwipe />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/share/:id" 
+            element={
+              <PrivateRoute>
+                <ShareScreen />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/share" 
+            element={
+              <PrivateRoute>
+                <ShareScreen />
+              </PrivateRoute>
+            } 
+          />
+        </Routes>
+      </MainContent>
     </AppContainer>
   );
 };
@@ -162,6 +164,12 @@ const AppContainer = styled.div`
     max-width: 1440px;
     margin: 0 auto;
   }
+`;
+
+const MainContent = styled.main`
+  flex: 1;
+  margin-top: 60px; /* Space for the fixed header */
+  padding: 20px;
 `;
 
 function App() {

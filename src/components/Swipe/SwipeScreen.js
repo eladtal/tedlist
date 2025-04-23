@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaHeart, FaTimes, FaInfo, FaHandshake, FaShoppingCart, FaTag, FaPlusCircle, FaUser, FaFilter } from 'react-icons/fa';
+import { FaArrowLeft, FaHeart, FaTimes, FaInfo, FaHandshake, FaShoppingCart, FaTag, FaPlusCircle, FaUser, FaFilter } from 'react-icons/fa/index.js';
 import theme from '../../styles/theme';
 
 const Container = styled.div`
@@ -111,7 +111,11 @@ const CardsContainer = styled.div`
   }
 `;
 
-const SwipeCard = styled.div`
+const SwipeCard = styled.div.attrs(props => ({
+  style: {
+    transform: `translateX(${props.offset || 0}px) rotate(${(props.offset || 0) * 0.1}deg)`,
+  }
+}))`
   position: absolute;
   width: 100%;
   height: 100%;
@@ -120,7 +124,6 @@ const SwipeCard = styled.div`
   box-shadow: ${theme.shadows.medium};
   overflow: hidden;
   transition: transform 0.3s ease;
-  transform: translateX(${props => props.offset}px) rotate(${props => props.offset * 0.1}deg);
   opacity: ${props => props.isActive ? 1 : 0};
   visibility: ${props => props.isActive ? 'visible' : 'hidden'};
   pointer-events: ${props => props.isActive ? 'auto' : 'none'};
@@ -246,6 +249,22 @@ const InfoButton = styled(ActionButton)`
   }
 `;
 
+const SwipeAnimationMessage = styled.div.attrs(props => ({
+  className: props.show ? 'visible' : 'hidden'
+}))`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  opacity: ${props => props.className === 'visible' ? 1 : 0};
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+`;
+
 const EmptyState = styled.div`
   display: flex;
   flex-direction: column;
@@ -315,20 +334,6 @@ const ActionLink = styled.button`
   svg {
     margin-right: ${theme.spacing.sm};
   }
-`;
-
-const SwipeAnimationMessage = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 48px;
-  font-weight: bold;
-  color: white;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-  opacity: ${props => props.show ? 1 : 0};
-  transition: opacity 0.3s ease;
-  pointer-events: none;
 `;
 
 // Sample items for swiping
@@ -580,10 +585,10 @@ const SwipeScreen = () => {
                   offset={index === currentIndex ? offset : 0}
                 >
                   <CardImage src={item.image}>
-                    <SwipeAnimationMessage show={showLikeMessage && index === currentIndex}>
+                    <SwipeAnimationMessage show={!!(showLikeMessage && index === currentIndex)}>
                       LIKE
                     </SwipeAnimationMessage>
-                    <SwipeAnimationMessage show={showDislikeMessage && index === currentIndex}>
+                    <SwipeAnimationMessage show={!!(showDislikeMessage && index === currentIndex)}>
                       NOPE
                     </SwipeAnimationMessage>
                     {item.listingType === 'trade' && (

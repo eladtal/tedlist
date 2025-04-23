@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaEnvelope, FaLock, FaTimes } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaTimes } from 'react-icons/fa/index.js';
 import { useAuth } from '../../contexts/AuthContext';
 import theme from '../../styles/theme';
+import { AuthService } from '../../services';
 
 const Container = styled.div`
   display: flex;
@@ -144,18 +145,25 @@ const LoginScreen = () => {
     
     try {
       setLoading(true);
-      await login(email, password);
       
-      // Redirect to home on success
-      navigate('/');
+      // Call the login function with email and password
+      const user = await login(email, password);
+      
+      if (user) {
+        // Redirect to home on success
+        navigate('/');
+      } else {
+        setError('Login failed. Please check your credentials.');
+      }
     } catch (error) {
-      setError(error.message);
+      console.error('Login error:', error);
+      setError(error.message || 'Failed to login. Please try again.');
     } finally {
       setLoading(false);
     }
   };
   
-  // If no users exist yet, create a demo user
+  // Demo login (using our API service now)
   const handleDemoLogin = async () => {
     try {
       setLoading(true);
@@ -163,31 +171,41 @@ const LoginScreen = () => {
       const demoEmail = 'demo@tedlist.com';
       const demoPassword = 'demopassword';
       
-      // Check if users exist
-      const existingUsers = JSON.parse(localStorage.getItem('tedlistUsers') || '[]');
-      
-      // If demo user doesn't exist, create it
-      if (!existingUsers.some(user => user.email === demoEmail)) {
-        const demoUser = {
-          id: 'user_demo',
-          email: demoEmail,
-          password: demoPassword,
-          username: 'Demo User',
-          profileImage: 'https://randomuser.me/api/portraits/lego/1.jpg',
-          createdAt: new Date().toISOString()
-        };
-        
-        existingUsers.push(demoUser);
-        localStorage.setItem('tedlistUsers', JSON.stringify(existingUsers));
+      // First try to login with demo credentials
+      try {
+        const user = await login(demoEmail, demoPassword);
+        if (user) {
+          // Login successful, redirect to home
+          navigate('/');
+          return;
+        }
+      } catch (loginError) {
+        console.log('Demo user does not exist yet, creating...');
       }
       
-      // Log in as demo user
-      await login(demoEmail, demoPassword);
+      // If login failed, try to register the demo user
+      const demoUser = {
+        email: demoEmail,
+        password: demoPassword,
+        username: 'Demo User',
+      };
       
-      // Redirect to home
-      navigate('/');
+      const response = await AuthService.register(demoUser);
+      
+      if (response.success) {
+        // Registration successful, now login
+        const user = await login(demoEmail, demoPassword);
+        if (user) {
+          navigate('/');
+        } else {
+          throw new Error('Failed to login after creating demo account');
+        }
+      } else {
+        throw new Error(response.error || 'Failed to create demo account');
+      }
     } catch (error) {
-      setError(error.message);
+      console.error('Demo login error:', error);
+      setError(error.message || 'Failed to access demo account');
     } finally {
       setLoading(false);
     }

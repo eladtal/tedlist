@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaExchangeAlt, FaPlus, FaEnvelope, FaUser } from 'react-icons/fa';
+import { FaHome, FaExchangeAlt, FaPlus, FaEnvelope, FaUser } from 'react-icons/fa/index.js';
 import { useAuth } from '../../contexts/AuthContext';
 import theme from '../../styles/theme';
 

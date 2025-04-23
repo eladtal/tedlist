@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaEnvelope, FaLock, FaUser, FaCamera, FaTimes, FaCheck } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaUser, FaCamera, FaTimes, FaCheck } from 'react-icons/fa/index.js';
 import { useAuth } from '../../contexts/AuthContext';
 import theme from '../../styles/theme';
+import { AuthService } from '../../services';
 
 const Container = styled.div`
   display: flex;
@@ -226,12 +227,40 @@ const SignupScreen = () => {
     
     try {
       setLoading(true);
-      await signup(formData.email, formData.password, formData.username, profileImage);
+      
+      // Prepare user data in the format expected by the backend
+      const userData = {
+        email: formData.email,
+        username: formData.username,
+        password: formData.password
+      };
+      
+      console.log('Sending registration data:', userData);
+      
+      // First, register the user directly with AuthService
+      const registerResult = await AuthService.register(userData);
+      
+      if (!registerResult.success) {
+        throw new Error(registerResult.error || 'Registration failed');
+      }
+      
+      console.log('Registration successful:', registerResult);
+      
+      // If profile image was provided, update it separately
+      if (profileImage) {
+        try {
+          await AuthService.updateProfile({ profileImage });
+        } catch (imageError) {
+          console.error('Failed to upload profile image:', imageError);
+          // Continue even if image upload fails
+        }
+      }
       
       // Redirect to home on success
       navigate('/');
     } catch (error) {
-      setError(error.message);
+      console.error('Signup error:', error);
+      setError(error.message || 'Failed to create account. Please try again.');
     } finally {
       setLoading(false);
     }
