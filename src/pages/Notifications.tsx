@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { API_BASE_URL } from '../config';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from 'react-hot-toast';
 
-interface Notification {
+interface NotificationType {
   _id: string;
   type: 'like' | 'match' | 'response';
   message: string;
@@ -24,7 +24,7 @@ interface Notification {
 }
 
 const Notifications: React.FC = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [loading, setLoading] = useState(true);
   const { token } = useAuthStore();
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ const Notifications: React.FC = () => {
     }
   };
 
-  const handleAcceptTrade = async (notification: Notification) => {
+  const handleAcceptTrade = async (notification: NotificationType) => {
     try {
       await axios.post(
         `${API_BASE_URL}/api/trading/accept`,
@@ -92,7 +92,7 @@ const Notifications: React.FC = () => {
     }
   };
 
-  const handleDeclineTrade = async (notification: Notification) => {
+  const handleDeclineTrade = async (notification: NotificationType) => {
     try {
       await axios.post(
         `${API_BASE_URL}/api/trading/decline`,

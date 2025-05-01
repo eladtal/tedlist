@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { toast } from 'react-hot-toast'
 
 interface User {
@@ -26,7 +26,7 @@ interface Report {
 export default function Admin() {
   const [users, setUsers] = useState<User[]>([])
   const [reports, setReports] = useState<Report[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading] = useState(true)
 
   // TODO: Fetch users and reports from API
   // useEffect(() => {

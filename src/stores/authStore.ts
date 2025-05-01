@@ -12,8 +12,7 @@ interface User {
 interface AuthState {
   user: User | null
   token: string | null
-  setUser: (user: User | null) => void
-  setToken: (token: string | null) => void
+  login: (token: string, user: User) => void
   logout: () => void
   isInitialized: boolean
 }
@@ -43,23 +42,11 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       ...getInitialState(),
-      setUser: (user) => {
-        console.log('Setting user:', user?.email)
-        set({ user })
-        if (user) {
-          localStorage.setItem('user', JSON.stringify(user))
-        } else {
-          localStorage.removeItem('user')
-        }
-      },
-      setToken: (token) => {
-        console.log('Setting token:', token ? 'present' : 'null')
-        set({ token })
-        if (token) {
-          localStorage.setItem('token', token)
-        } else {
-          localStorage.removeItem('token')
-        }
+      login: (token: string, user: User) => {
+        console.log('Logging in, setting auth state')
+        localStorage.setItem('token', token)
+        localStorage.setItem('user', JSON.stringify(user))
+        set({ token, user })
       },
       logout: () => {
         console.log('Logging out, clearing auth state')

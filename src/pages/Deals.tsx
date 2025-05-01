@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { API_BASE_URL } from '../config';
 import { useAuthStore } from '../stores/authStore';
 import { FunnelIcon } from '@heroicons/react/24/outline';
+import { toast } from 'react-hot-toast';
 
 interface Deal {
   _id: string;
@@ -120,8 +121,9 @@ const MyDeals: React.FC = () => {
         });
 
         setDeals(response.data);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching deals:', error.response || error);
+        toast.error('Failed to fetch deals');
       } finally {
         setLoading(false);
       }

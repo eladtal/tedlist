@@ -2,9 +2,8 @@ import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
-import { Bars3Icon, XMarkIcon, HomeIcon, UserIcon, ShoppingBagIcon, PlusCircleIcon, ArrowLeftOnRectangleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, UserIcon, PlusCircleIcon, ArrowLeftOnRectangleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
-import NotificationBell from './NotificationBell'
 import NotificationPanel from './NotificationPanel'
 import { Menu } from '@headlessui/react'
 

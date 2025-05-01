@@ -1,11 +1,19 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useAuthStore } from '../stores/authStore'
 import { toast } from 'react-hot-toast'
+import axios from 'axios'
+import { API_BASE_URL } from '../config'
+
+interface FormData {
+  name: string
+  email: string
+  avatar: string
+}
 
 export default function Profile() {
-  const { user, setUser } = useAuthStore()
+  const { user, login } = useAuthStore()
   const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: user?.name || '',
     email: user?.email || '',
     avatar: user?.avatar || '',
@@ -18,25 +26,25 @@ export default function Profile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
     try {
-      const response = await fetch('/api/users/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
+      const response = await axios.put(
+        `${API_BASE_URL}/api/users/profile`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${useAuthStore.getState().token}`
+          }
+        }
+      )
 
-      if (!response.ok) {
-        throw new Error('Failed to update profile')
+      if (response.data.user) {
+        login(useAuthStore.getState().token!, response.data.user)
+        toast.success('Profile updated successfully!')
+        setIsEditing(false)
       }
-
-      const updatedUser = await response.json()
-      setUser(updatedUser)
-      setIsEditing(false)
-      toast.success('Profile updated successfully!')
-    } catch (error) {
-      toast.error('Failed to update profile. Please try again.')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update profile')
     }
   }
 
@@ -140,9 +148,17 @@ export default function Profile() {
                       </dd>
                     </div>
                     <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-                      <dt className="text-sm font-medium text-gray-500">Role</dt>
+                      <dt className="text-sm font-medium text-gray-500">Avatar</dt>
                       <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                        {user?.role}
+                        {user?.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt="Profile"
+                            className="h-20 w-20 rounded-full"
+                          />
+                        ) : (
+                          'No avatar set'
+                        )}
                       </dd>
                     </div>
                   </dl>

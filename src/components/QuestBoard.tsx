@@ -13,10 +13,9 @@ interface Quest {
 
 interface QuestBoardProps {
   quests: Quest[];
-  onQuestComplete: (questId: string) => void;
 }
 
-const QuestBoard: React.FC<QuestBoardProps> = ({ quests, onQuestComplete }) => {
+const QuestBoard: React.FC<QuestBoardProps> = ({ quests }) => {
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
       <h2 className="text-2xl font-bold mb-6">Beginner Quests</h2>

@@ -6,23 +6,15 @@ import { useNotificationStore } from '../stores/notificationStore';
 import { Notification } from '../types/notification';
 import { useAuthStore } from '../stores/authStore';
 import TradeDetailsModal from './TradeDetailsModal';
-import axios from 'axios';
 import { API_BASE_URL } from '../config';
 import { toast } from 'react-hot-toast';
-
-interface TradeDetailsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  notification: Notification;
-  onResponseSubmitted: () => void;
-}
 
 const getImageUrl = (imagePath: string) => {
   if (!imagePath) return '';
   return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}${imagePath}`;
 };
 
-export default function NotificationPanel() {
+const NotificationPanel = () => {
   const { notifications, loading, markAsRead } = useNotificationStore();
   const { token } = useAuthStore();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
@@ -49,35 +41,6 @@ export default function NotificationPanel() {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedNotification(null);
-  };
-
-  const handleTradeResponse = async (accepted: boolean) => {
-    if (!selectedNotification || !token) {
-      console.error('Missing notification or token');
-      toast.error('Please log in to respond to trades');
-      return;
-    }
-    
-    try {
-      const endpoint = accepted ? 'accept' : 'decline';
-      await axios.post(
-        `${API_BASE_URL}/api/trading/${endpoint}`,
-        {
-          itemId: selectedNotification.item._id,
-          fromUserId: selectedNotification.fromUser._id
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      toast.success(accepted ? 'Trade accepted!' : 'Trade declined');
-      setIsModalOpen(false);
-      setSelectedNotification(null);
-    } catch (error) {
-      console.error('Error responding to trade:', error);
-      toast.error('Failed to respond to trade request');
-    }
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -146,4 +109,6 @@ export default function NotificationPanel() {
       )}
     </div>
   );
-} 
+};
+
+export default NotificationPanel; 

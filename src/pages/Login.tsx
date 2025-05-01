@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { toast } from 'react-hot-toast'
 import axios from 'axios'
@@ -10,8 +10,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
-  const location = useLocation()
-  const { setUser, setToken } = useAuthStore()
+  const { login } = useAuthStore()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,21 +22,13 @@ export default function Login() {
         password
       })
 
-      const { user, token } = response.data
-      
-      // Store in localStorage
-      localStorage.setItem('user', JSON.stringify(user))
-      localStorage.setItem('token', token)
-      
-      setUser(user)
-      setToken(token)
-      toast.success('Logged in successfully!')
-
-      // Redirect to dashboard
-      navigate('/dashboard')
+      if (response.data.token) {
+        login(response.data.token, response.data.user)
+        toast.success('Login successful!')
+        navigate('/')
+      }
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Invalid email or password'
-      toast.error(message)
+      toast.error(error.response?.data?.message || 'Login failed')
     } finally {
       setIsLoading(false)
     }

@@ -21,7 +21,7 @@ const SwipeDeck = ({ items, onMatch }: SwipeDeckProps) => {
   const [currentIndex, setCurrentIndex] = useState(0)
   const { addTeddies } = useUserStore()
 
-  const handleDragEnd = async (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+  const handleDragEnd = async (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const threshold = 100
     const item = items[currentIndex]
 
@@ -62,16 +62,6 @@ const SwipeDeck = ({ items, onMatch }: SwipeDeckProps) => {
   }
 
   const currentItem = items[currentIndex]
-
-  const handleSwipe = (direction: string) => {
-    if (!currentItem) return;
-    
-    if (direction === 'right') {
-      handleLike();
-    } else {
-      handleSkip();
-    }
-  };
 
   return (
     <div className="relative h-96">

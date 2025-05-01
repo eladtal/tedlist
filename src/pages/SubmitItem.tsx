@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { API_BASE_URL } from '../config'
 import { useAuthStore } from '../stores/authStore'
+import axios from 'axios'
 
 interface FormData {
   title: string
@@ -57,34 +58,23 @@ export default function SubmitItem() {
     setIsLoading(true)
 
     try {
-      const formDataToSend = new FormData()
-      formDataToSend.append('title', formData.title)
-      formDataToSend.append('description', formData.description)
-      formDataToSend.append('condition', formData.condition)
-      formDataToSend.append('type', formData.type)
-      formData.images.forEach(image => {
-        formDataToSend.append('images', image)
-      })
+      const response = await axios.post(
+        `${API_BASE_URL}/api/items`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      )
 
-      const response = await fetch(`${API_BASE_URL}/api/items`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formDataToSend
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to submit item' }))
-        console.error('Submit error:', errorData)
-        throw new Error(errorData.message || 'Failed to submit item')
+      if (response.status === 201) {
+        toast.success('Item submitted successfully!')
+        navigate('/dashboard')
       }
-
-      const data = await response.json()
-      toast.success('Item submitted successfully!')
-      navigate('/dashboard')
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to submit item. Please try again.')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to submit item')
     } finally {
       setIsLoading(false)
     }
