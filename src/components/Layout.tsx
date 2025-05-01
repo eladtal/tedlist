@@ -10,8 +10,9 @@ import { Menu } from '@headlessui/react'
 
 const navigation = [
   { name: 'Home', href: '/' },
-  { name: 'Buy', href: '/buy' },
-  { name: 'Sell', href: '/sell' },
+  { name: 'Trade', href: '/trade' },
+  { name: 'My Items', href: '/my-items' },
+  { name: 'Submit Item', href: '/submit-item' },
 ]
 
 const Layout: React.FC = () => {

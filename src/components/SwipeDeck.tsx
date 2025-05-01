@@ -53,14 +53,6 @@ const SwipeDeck = ({ items, onMatch }: SwipeDeckProps) => {
     })
   }
 
-  const triggerMatchAnimation = () => {
-    confetti({
-      particleCount: 200,
-      spread: 90,
-      origin: { y: 0.6 }
-    })
-  }
-
   if (items.length === 0) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -70,6 +62,16 @@ const SwipeDeck = ({ items, onMatch }: SwipeDeckProps) => {
   }
 
   const currentItem = items[currentIndex]
+
+  const handleSwipe = (direction: string) => {
+    if (!currentItem) return;
+    
+    if (direction === 'right') {
+      handleLike();
+    } else {
+      handleSkip();
+    }
+  };
 
   return (
     <div className="relative h-96">
