@@ -284,7 +284,6 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
               connectionStatus: 'connected',
               connectionAttempts: 0 // Reset attempts on successful connection
             });
-            toast.success('Connected to notification service');
           }
           break;
         case 'ping':

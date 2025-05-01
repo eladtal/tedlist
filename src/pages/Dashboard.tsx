@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore'
 import { PlusIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { API_BASE_URL } from '../config'
 import { useUserStore } from '../stores/userStore'
+import { useNotificationStore } from '../stores/notificationStore'
 
 interface Item {
   _id: string
@@ -19,6 +20,7 @@ interface Item {
 
 export default function Dashboard() {
   const { user, token } = useAuthStore()
+  const { notifications } = useNotificationStore()
   console.log('Dashboard mounted - User:', user, 'Token:', token) // Debug log
   
   const [items, setItems] = useState<Item[]>([])
@@ -49,6 +51,7 @@ export default function Dashboard() {
         if (!data.items || !Array.isArray(data.items)) {
           throw new Error('Invalid data format: items array not found')
         }
+        console.log('First item data:', data.items[0])
         setItems(data.items)
         setError(null)
       } catch (error) {
@@ -60,6 +63,22 @@ export default function Dashboard() {
     }
     fetchItems()
   }, [token])
+
+  // Add effect to update items when notifications change
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const lastNotification = notifications[0];
+      if (lastNotification.type === 'match' && lastNotification.item) {
+        setItems(prevItems => 
+          prevItems.map(item => 
+            item._id === lastNotification.item?._id 
+              ? { ...item, status: 'traded' }
+              : item
+          )
+        );
+      }
+    }
+  }, [notifications]);
 
   const openModal = (item: Item) => {
     setSelectedItem(item)
@@ -93,6 +112,25 @@ export default function Dashboard() {
   // Separate items by type
   const tradeItems = items.filter(item => item.type === 'trade')
   const sellItems = items.filter(item => item.type === 'sell')
+
+  // Fix date display
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return '';
+      }
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return '';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -197,7 +235,7 @@ export default function Dashboard() {
                             {item.status}
                           </span>
                           <span className="text-xs text-gray-500">
-                            {new Date(item.createdAt).toLocaleDateString()}
+                            {formatDate(item.createdAt)}
                           </span>
                         </div>
                       </div>
@@ -240,7 +278,7 @@ export default function Dashboard() {
                             {item.status}
                           </span>
                           <span className="text-xs text-gray-500">
-                            {new Date(item.createdAt).toLocaleDateString()}
+                            {formatDate(item.createdAt)}
                           </span>
                         </div>
                       </div>
@@ -270,7 +308,7 @@ export default function Dashboard() {
             <div className="mb-2 flex flex-wrap gap-2">
               <span className="inline-block bg-pastel-green/60 text-green-800 rounded-full px-3 py-1 text-xs font-medium">{selectedItem.condition}</span>
               <span className="inline-block bg-pastel-yellow/60 text-yellow-800 rounded-full px-3 py-1 text-xs font-medium">{selectedItem.status}</span>
-              <span className="inline-block bg-pastel-purple/60 text-purple-800 rounded-full px-3 py-1 text-xs font-medium">{new Date(selectedItem.createdAt).toLocaleDateString()}</span>
+              <span className="inline-block bg-pastel-purple/60 text-purple-800 rounded-full px-3 py-1 text-xs font-medium">{formatDate(selectedItem.createdAt)}</span>
             </div>
             <button onClick={handleDelete} disabled={deleting} className="btn btn-secondary mt-4 flex items-center justify-center w-full disabled:opacity-50">
               <TrashIcon className="h-5 w-5 mr-2" />

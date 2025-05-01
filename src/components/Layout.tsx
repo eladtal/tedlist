@@ -26,7 +26,7 @@ const Layout: React.FC = () => {
   }, [user]);
 
   const navigation = user ? [
-    { name: 'Submit Item', href: '/submit-item' },
+    { name: 'Submit Item', href: '/submit' },
     { name: 'Dashboard', href: '/dashboard' },
     { name: 'My Deals', href: '/my-deals' },
   ] : [];

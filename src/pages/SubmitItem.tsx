@@ -58,9 +58,20 @@ export default function SubmitItem() {
     setIsLoading(true)
 
     try {
+      const formDataToSend = new FormData()
+      formDataToSend.append('title', formData.title)
+      formDataToSend.append('description', formData.description)
+      formDataToSend.append('condition', formData.condition)
+      formDataToSend.append('type', formData.type)
+      
+      // Append each image file
+      formData.images.forEach((image, index) => {
+        formDataToSend.append('images', image)
+      })
+
       const response = await axios.post(
         `${API_BASE_URL}/api/items`,
-        formData,
+        formDataToSend,
         {
           headers: {
             Authorization: `Bearer ${token}`,
