@@ -7,6 +7,8 @@ interface User {
   name: string
   role: 'user' | 'admin'
   avatar?: string
+  isAdmin: boolean
+  adminPrivileges: string[]
 }
 
 interface AuthState {

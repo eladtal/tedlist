@@ -9,7 +9,7 @@ export default function AdminRoute({ children }: AdminRouteProps) {
   const { user } = useAuthStore()
   const location = useLocation()
 
-  if (!user || user.role !== 'admin') {
+  if (!user || !user.isAdmin) {
     return <Navigate to="/" state={{ from: location }} replace />
   }
 

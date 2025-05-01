@@ -15,6 +15,7 @@ import Notifications from './pages/Notifications'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
 import MyDeals from './pages/Deals'
+import AdminPanel from './pages/AdminPanel'
 
 const App: React.FC = () => {
   return (
@@ -34,6 +35,7 @@ const App: React.FC = () => {
             <Route path="select" element={<ProtectedRoute><ItemSelection /></ProtectedRoute>} />
             <Route path="swipe" element={<ProtectedRoute><SwipeInterface /></ProtectedRoute>} />
           </Route>
+          <Route path="admin-panel" element={<AdminRoute><AdminPanel /></AdminRoute>} />
         </Route>
       </Routes>
       <Toaster position="bottom-right" />
