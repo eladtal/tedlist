@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
-import { Bars3Icon, XMarkIcon, UserIcon, ArrowLeftOnRectangleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, UserIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 import NotificationPanel from './NotificationPanel'
 import { Menu } from '@headlessui/react'

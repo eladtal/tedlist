@@ -236,6 +236,7 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
       ws.onerror = (error) => {
         // Only update state if this is the current socket
         if (ws === get().socket) {
+          console.error('WebSocket error:', error);
           set({ 
             connectionStatus: 'disconnected',
             socket: null,
@@ -246,12 +247,8 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
 
       set({ socket: ws });
     } catch (error) {
-      set({ 
-        connectionStatus: 'disconnected',
-        error: 'Failed to connect to notification service',
-        socket: null,
-        connectionAttempts: get().connectionAttempts + 1
-      });
+      console.error('Error in notification store:', error);
+      set({ error: 'Failed to connect to notification service' });
     }
   },
 

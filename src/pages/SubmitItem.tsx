@@ -65,7 +65,7 @@ export default function SubmitItem() {
       formDataToSend.append('type', formData.type)
       
       // Append each image file
-      formData.images.forEach((image, index) => {
+      formData.images.forEach((image) => {
         formDataToSend.append('images', image)
       })
 
@@ -201,23 +201,31 @@ export default function SubmitItem() {
             </div>
 
             {previewUrls.length > 0 && (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {previewUrls.map((url, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={url}
-                      alt={`Preview ${index + 1}`}
-                      className="h-32 w-full rounded-xl object-cover transition-all duration-200 group-hover:shadow-soft"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute -right-2 -top-2 rounded-full bg-red-500/90 p-1.5 text-white hover:bg-red-600 transition-colors duration-200 backdrop-blur-sm"
-                    >
-                      <XMarkIcon className="h-4 w-4" />
-                    </button>
+              <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
+                {previewUrls.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-4">
+                    {previewUrls.map((url) => (
+                      <div key={url} className="relative">
+                        <img
+                          src={url}
+                          alt="Preview"
+                          className="h-24 w-24 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(previewUrls.indexOf(url))}
+                          className="absolute -top-2 -right-2 rounded-full bg-red-500 text-white p-1"
+                        >
+                          <XMarkIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div className="text-center">
+                    <p className="text-sm leading-6 text-gray-600">No images uploaded</p>
+                  </div>
+                )}
               </div>
             )}
 

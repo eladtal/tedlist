@@ -114,7 +114,7 @@ const AdminPanel: React.FC = () => {
         throw new Error('Failed to delete user');
       }
 
-      const updatedUser = await response.json();
+      await response.json();
       setUsers(users.map(user => 
         user._id === userId ? { ...user, isDeleted: true } : user
       ));
