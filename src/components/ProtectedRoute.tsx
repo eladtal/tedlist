@@ -16,18 +16,23 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       if (!token) return;
       
       try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+        const response = await fetch(`${API_BASE_URL}/api/auth/validate`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         
         if (!response.ok) {
-          throw new Error('Token invalid');
+          const data = await response.json();
+          console.error('Token validation failed:', data);
+          // Only logout if it's a clear authentication error
+          if (response.status === 401) {
+            logout();
+          }
         }
       } catch (error) {
-        console.error('Token verification failed:', error);
-        logout();
+        console.error('Token verification error:', error);
+        // Don't logout on network errors or other non-auth errors
       }
     };
 

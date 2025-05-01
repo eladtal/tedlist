@@ -26,15 +26,24 @@ const NotificationPanel = () => {
       return;
     }
 
+    console.log('Clicked notification:', notification);
+    console.log('Notification ID:', notification._id);
+
+    if (!notification._id) {
+      console.error('Missing notification ID:', notification);
+      toast.error('Invalid notification');
+      return;
+    }
+
     try {
       await markAsRead(notification._id);
+      
       if (notification.type === 'offer') {
         setSelectedNotification(notification);
         setIsModalOpen(true);
       }
     } catch (error) {
       console.error('Error handling notification click:', error);
-      toast.error('Failed to mark notification as read');
     }
   };
 
@@ -60,9 +69,9 @@ const NotificationPanel = () => {
         <Menu.Items className="absolute right-0 z-10 mt-2 w-80 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
           <div className="max-h-96 overflow-y-auto">
             {loading ? (
-              <div className="p-4 text-center text-gray-500">Loading notifications...</div>
+              <div key="loading" className="p-4 text-center text-gray-500">Loading notifications...</div>
             ) : notifications.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">No notifications</div>
+              <div key="empty" className="p-4 text-center text-gray-500">No notifications</div>
             ) : (
               notifications.map((notification) => (
                 <div

@@ -2,17 +2,10 @@ import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
-import { Bars3Icon, XMarkIcon, UserIcon, PlusCircleIcon, ArrowLeftOnRectangleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, UserIcon, ArrowLeftOnRectangleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 import NotificationPanel from './NotificationPanel'
 import { Menu } from '@headlessui/react'
-
-const navigation = [
-  { name: 'Home', href: '/' },
-  { name: 'Trade', href: '/trade' },
-  { name: 'My Items', href: '/my-items' },
-  { name: 'Submit Item', href: '/submit-item' },
-]
 
 const Layout: React.FC = () => {
   const { user, logout } = useAuthStore()
@@ -32,11 +25,11 @@ const Layout: React.FC = () => {
     }
   }, [user]);
 
-  const userNavigation = user ? [
+  const navigation = user ? [
+    { name: 'Submit Item', href: '/submit-item' },
     { name: 'Dashboard', href: '/dashboard' },
-    { name: 'Profile', href: '/profile' },
     { name: 'My Deals', href: '/my-deals' },
-  ] : []
+  ] : [];
 
   const handleLogout = async () => {
     try {
@@ -60,7 +53,7 @@ const Layout: React.FC = () => {
                 </Link>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                {[...navigation, ...userNavigation].map((item) => (
+                {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
@@ -94,7 +87,7 @@ const Layout: React.FC = () => {
                           </svg>
                         </div>
                       </Menu.Button>
-                      <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                         <Menu.Item>
                           {({ active }) => (
                             <Link
@@ -171,64 +164,48 @@ const Layout: React.FC = () => {
                     ? 'border-primary-500 bg-primary-50 text-primary-700'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700'
                 }`}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 {item.name}
               </Link>
             ))}
           </div>
-          <div className="border-t border-gray-200 pb-3 pt-4">
-            {user ? (
-              <div>
-                <div className="flex items-center px-4 pb-3">
-                  <div className="flex-shrink-0">
-                    <img
-                      src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff&bold=true`}
-                      alt={user.name}
-                      className="h-10 w-10 rounded-full ring-2 ring-white"
-                    />
-                  </div>
-                  <div className="ml-3">
-                    <div className="text-base font-medium text-gray-800">{user.name}</div>
-                    <div className="text-sm font-medium text-gray-500">{user.email}</div>
-                  </div>
-                  <NotificationPanel />
+          {user && (
+            <div className="border-t border-gray-200 pb-3 pt-4">
+              <div className="flex items-center px-4 pb-3">
+                <div className="flex-shrink-0">
+                  <img
+                    src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff&bold=true`}
+                    alt={user.name}
+                    className="h-10 w-10 rounded-full ring-2 ring-white"
+                  />
                 </div>
-                <div className="space-y-1">
-                  <Link
-                    to="/profile"
-                    className="flex items-center px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                  >
-                    <UserIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
-                    Profile
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                  >
-                    <ArrowLeftOnRectangleIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
-                    Logout
-                  </button>
+                <div className="ml-3">
+                  <div className="text-base font-medium text-gray-800">{user.name}</div>
+                  <div className="text-sm font-medium text-gray-500">{user.email}</div>
                 </div>
+                <NotificationPanel />
               </div>
-            ) : (
-              <div className="space-y-1 px-4">
-                <Link
-                  to="/login"
-                  className="flex items-center py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                >
-                  <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="flex items-center py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                >
-                  <PlusCircleIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
-                  Register
-                </Link>
-              </div>
-            )}
-          </div>
+              <Link
+                to="/profile"
+                className="flex items-center px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <UserIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
+                Profile
+              </Link>
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setMobileMenuOpen(false);
+                }}
+                className="flex w-full items-center px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+              >
+                <ArrowLeftOnRectangleIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 

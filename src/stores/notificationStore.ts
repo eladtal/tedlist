@@ -16,7 +16,6 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
   fetchNotifications: async () => {
     try {
       const token = useAuthStore.getState().token;
-      console.log('Fetching notifications with token:', token);
       
       if (!token) {
         console.error('No auth token found in store');
@@ -30,10 +29,22 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
         }
       });
       
-      console.log('Notifications response:', response.data);
-      
       if (response.data?.success && Array.isArray(response.data.notifications)) {
-        set({ notifications: response.data.notifications });
+        // Transform and validate notifications
+        const validNotifications = response.data.notifications
+          .filter((notification: any) => {
+            const hasId = notification && (notification._id || notification.user);
+            if (!hasId) {
+              console.error('Invalid notification structure:', notification);
+            }
+            return hasId;
+          })
+          .map((notification: any) => ({
+            ...notification,
+            _id: (notification._id || notification.user).toString() // Ensure _id is always a string
+          }));
+        
+        set({ notifications: validNotifications });
       } else {
         console.error('Invalid notification data format:', response.data);
         set({ error: 'Invalid notification data format' });
@@ -57,12 +68,19 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
         return;
       }
 
+      if (!notificationId) {
+        console.error('No notification ID provided');
+        toast.error('Invalid notification');
+        return;
+      }
+
       const response = await axios.post(
-        `${API_BASE_URL}/api/notifications/${notificationId}/read`,
-        {},
+        `${API_BASE_URL}/api/notifications/mark-read`,
+        { notificationId },
         {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -75,10 +93,13 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
               : notification
           )
         }));
+      } else {
+        throw new Error(response.data.message || 'Failed to mark notification as read');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error marking notification as read:', error);
-      toast.error('Failed to mark notification as read');
+      toast.error(error.response?.data?.message || 'Failed to mark notification as read');
+      throw error;
     }
   },
 
@@ -116,9 +137,24 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
   },
 
   addNotification: (notification: Notification) => {
-    console.log('Adding new notification:', notification);
+    if (!notification) {
+      console.error('Invalid notification data:', notification);
+      return;
+    }
+
+    // Transform notification to ensure it has _id as string
+    const transformedNotification = {
+      ...notification,
+      _id: (notification._id || notification.user).toString() // Ensure _id is always a string
+    };
+
+    if (!transformedNotification._id) {
+      console.error('Invalid notification data - no ID or user:', notification);
+      return;
+    }
+    
     set(state => ({
-      notifications: [notification, ...state.notifications]
+      notifications: [transformedNotification, ...state.notifications]
     }));
     toast.success('New notification received!');
   },
@@ -127,12 +163,10 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
     try {
       // Prevent multiple connection attempts
       if (get().connectionStatus === 'connecting' || get().connectionStatus === 'connected') {
-        console.log('Already connecting or connected, skipping connection attempt');
         return;
       }
 
       const token = useAuthStore.getState().token;
-      console.log('Connecting WebSocket with token:', token ? 'present' : 'missing');
       
       if (!token) {
         console.error('No auth token found in store');
@@ -142,12 +176,10 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
       set({ connectionStatus: 'connecting', connectionAttempts: get().connectionAttempts + 1 });
 
       const wsUrl = `ws://localhost:8000/ws`;
-      console.log('Attempting WebSocket connection to:', wsUrl);
       
       // Close existing socket if any
       const existingSocket = get().socket;
       if (existingSocket) {
-        console.log('Closing existing socket connection');
         existingSocket.close(1000, 'New connection attempt');
       }
       
@@ -156,20 +188,17 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
       // Add connection timeout
       const connectionTimeout = setTimeout(() => {
         if (ws.readyState !== WebSocket.OPEN) {
-          console.error('WebSocket connection timeout');
           ws.close();
           set({ 
             connectionStatus: 'disconnected',
             socket: null,
             connectionAttempts: get().connectionAttempts + 1
           });
-          toast.error('Failed to connect to notification service (timeout)');
         }
       }, 5000);
 
       ws.onopen = () => {
         clearTimeout(connectionTimeout);
-        console.log('WebSocket connection established, sending auth message');
         ws.send(JSON.stringify({
           type: 'authenticate',
           token: token
@@ -178,20 +207,13 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
 
       ws.onclose = (event) => {
         clearTimeout(connectionTimeout);
-        console.log('WebSocket connection closed:', {
-          code: event.code,
-          reason: event.reason,
-          wasClean: event.wasClean,
-          attempts: get().connectionAttempts
-        });
-
+        
         // Only update state if this is the current socket
         if (ws === get().socket) {
           set({ connectionStatus: 'disconnected', socket: null });
           
           // Only attempt reconnect for abnormal closures and if we haven't tried too many times
           if (event.code !== 1000 && event.code !== 1001 && get().connectionAttempts < 3) {
-            console.log('Scheduling reconnection attempt');
             setTimeout(() => {
               // Double-check we're still disconnected before attempting reconnect
               if (get().connectionStatus === 'disconnected') {
@@ -199,7 +221,6 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
               }
             }, 5000);
           } else if (get().connectionAttempts >= 3) {
-            console.log('Maximum connection attempts reached');
             set({ connectionAttempts: 0 }); // Reset attempts counter
           }
         }
@@ -213,7 +234,6 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error occurred:', error);
         // Only update state if this is the current socket
         if (ws === get().socket) {
           set({ 
@@ -221,20 +241,17 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
             socket: null,
             connectionAttempts: get().connectionAttempts + 1
           });
-          toast.error('Failed to connect to notification service');
         }
       };
 
       set({ socket: ws });
     } catch (error) {
-      console.error('Error in WebSocket connection setup:', error);
       set({ 
         connectionStatus: 'disconnected',
         error: 'Failed to connect to notification service',
         socket: null,
         connectionAttempts: get().connectionAttempts + 1
       });
-      toast.error('Failed to connect to notification service');
     }
   },
 
