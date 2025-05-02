@@ -5,6 +5,7 @@ import { PlusIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { API_BASE_URL } from '../config'
 import { useUserStore } from '../stores/userStore'
 import { useNotificationStore } from '../stores/notificationStore'
+import { getImageUrl } from '../utils/imageUtils'
 
 interface Item {
   _id: string
@@ -212,7 +213,7 @@ export default function Dashboard() {
                       <div className="aspect-w-3 aspect-h-2 bg-pastel-blue/30 relative overflow-hidden">
                         {item.images && item.images.length > 0 ? (
                           <img
-                            src={`${API_BASE_URL}${item.images[0]}`}
+                            src={getImageUrl(item.images[0])}
                             alt={item.title}
                             className="h-48 w-full object-cover transition-transform duration-200 group-hover:scale-105"
                           />
@@ -255,7 +256,7 @@ export default function Dashboard() {
                       <div className="aspect-w-3 aspect-h-2 bg-pastel-pink/30 relative overflow-hidden">
                         {item.images && item.images.length > 0 ? (
                           <img
-                            src={`${API_BASE_URL}${item.images[0]}`}
+                            src={getImageUrl(item.images[0])}
                             alt={item.title}
                             className="h-48 w-full object-cover transition-transform duration-200 group-hover:scale-105"
                           />
@@ -298,7 +299,7 @@ export default function Dashboard() {
             <button onClick={closeModal} className="absolute top-3 right-3 text-gray-400 hover:text-gray-700"><XMarkIcon className="h-6 w-6" /></button>
             <div className="mb-4">
               {selectedItem.images && selectedItem.images.length > 0 ? (
-                <img src={`${API_BASE_URL}${selectedItem.images[0]}`} alt={selectedItem.title} className="w-full h-48 object-cover rounded-xl mb-2" />
+                <img src={getImageUrl(selectedItem.images[0])} alt={selectedItem.title} className="w-full h-48 object-cover rounded-xl mb-2" />
               ) : (
                 <div className="w-full h-48 flex items-center justify-center bg-pastel-blue/30 rounded-xl mb-2 text-gray-400">No image</div>
               )}
