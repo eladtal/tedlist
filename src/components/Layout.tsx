@@ -45,10 +45,10 @@ const Layout: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 justify-between">
-            <div className="flex">
-              <div className="flex flex-shrink-0 items-center">
-                <Link to="/" className="text-2xl font-bold text-primary-600">
+          <div className="flex h-16 justify-between items-center">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <Link to="/" className="text-xl sm:text-2xl font-bold text-primary-600">
                   Tedlist
                 </Link>
               </div>
@@ -80,7 +80,7 @@ const Layout: React.FC = () => {
                           alt={user.name}
                           className="h-8 w-8 rounded-full ring-2 ring-white"
                         />
-                        <div className="flex items-center">
+                        <div className="hidden sm:flex items-center">
                           <span className="text-sm font-medium text-gray-700">{user.name}</span>
                           <svg className="ml-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -153,7 +153,8 @@ const Layout: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="-mr-2 flex items-center sm:hidden">
+            <div className="flex items-center sm:hidden">
+              {user && <NotificationPanel />}
               <button
                 type="button"
                 className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
@@ -177,7 +178,7 @@ const Layout: React.FC = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`block border-l-4 py-2 pl-3 pr-4 text-base font-medium ${
+                className={`block border-l-4 py-3 pl-3 pr-4 text-base font-medium ${
                   location.pathname === item.href
                     ? 'border-primary-500 bg-primary-50 text-primary-700'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700'
@@ -188,9 +189,9 @@ const Layout: React.FC = () => {
               </Link>
             ))}
           </div>
-          {user && (
+          {user ? (
             <div className="border-t border-gray-200 pb-3 pt-4">
-              <div className="flex items-center px-4 pb-3">
+              <div className="flex items-center px-4 py-3">
                 <div className="flex-shrink-0">
                   <img
                     src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff&bold=true`}
@@ -202,32 +203,57 @@ const Layout: React.FC = () => {
                   <div className="text-base font-medium text-gray-800">{user.name}</div>
                   <div className="text-sm font-medium text-gray-500">{user.email}</div>
                 </div>
-                <NotificationPanel />
               </div>
+              <div className="mt-3 space-y-1">
+                <Link
+                  to="/profile"
+                  className="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+                {user.isAdmin && (
+                  <Link
+                    to="/admin-panel"
+                    className="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Admin Panel
+                  </Link>
+                )}
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full px-4 py-3 text-left text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="border-t border-gray-200 pb-3 pt-4 px-4 space-y-3">
               <Link
-                to="/profile"
-                className="flex items-center px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                to="/login"
+                className="block w-full text-center py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <UserIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
-                Profile
+                Login
               </Link>
-              <button
-                onClick={() => {
-                  handleLogout();
-                  setMobileMenuOpen(false);
-                }}
-                className="flex w-full items-center px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+              <Link
+                to="/register"
+                className="block w-full text-center py-2 text-base font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
+                onClick={() => setMobileMenuOpen(false)}
               >
-                <ArrowLeftOnRectangleIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
-                Logout
-              </button>
+                Register
+              </Link>
             </div>
           )}
         </div>
       </nav>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         <Outlet />
       </main>
     </div>
