@@ -134,33 +134,33 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+    <div className="w-full">
+      <div className="max-w-full">
         {/* User Stats */}
         <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <div className="text-center">
               <div className="text-xl sm:text-2xl font-bold text-primary-600">{teddies}</div>
-              <div className="text-sm sm:text-base text-gray-600">Teddies</div>
+              <div className="text-xs sm:text-sm text-gray-600">Teddies</div>
             </div>
             <div className="text-center">
               <div className="text-xl sm:text-2xl font-bold text-primary-600">{badges.length}</div>
-              <div className="text-sm sm:text-base text-gray-600">Badges</div>
+              <div className="text-xs sm:text-sm text-gray-600">Badges</div>
             </div>
             <div className="text-center">
               <div className="text-xl sm:text-2xl font-bold text-primary-600">{streak}</div>
-              <div className="text-sm sm:text-base text-gray-600">Day Streak</div>
+              <div className="text-xs sm:text-sm text-gray-600">Day Streak</div>
             </div>
           </div>
         </div>
 
-        <div className="mx-auto">
+        <div className="w-full">
           <div className="card">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-6">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900">My Items</h2>
               <Link
                 to="/submit"
-                className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gradient-to-r from-primary-400 to-primary-500 text-white font-medium shadow-sm hover:from-primary-500 hover:to-primary-600 transition-all duration-200 transform hover:scale-105 text-sm sm:text-base"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gradient-to-r from-primary-400 to-primary-500 text-white font-medium shadow-sm hover:from-primary-500 hover:to-primary-600 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto"
               >
                 <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                 New Item
@@ -199,7 +199,7 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {/* Trade Items Section */}
                 {tradeItems.length > 0 && (
                   <div>
@@ -208,7 +208,7 @@ export default function Dashboard() {
                       {tradeItems.map((item) => (
                         <div
                           key={item._id}
-                          className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+                          className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden w-full"
                         >
                           <div className="aspect-w-16 aspect-h-9 bg-gray-200">
                             {item.images && item.images[0] && (
@@ -221,13 +221,13 @@ export default function Dashboard() {
                           </div>
                           <div className="p-4">
                             <div className="flex items-start justify-between">
-                              <div>
+                              <div className="min-w-0 flex-1">
                                 <h4 className="text-base font-medium text-gray-900 truncate">{item.title}</h4>
                                 <p className="mt-1 text-sm text-gray-500 line-clamp-2">{item.description}</p>
                               </div>
                               <button
                                 onClick={() => openModal(item)}
-                                className="text-gray-400 hover:text-gray-500"
+                                className="ml-2 text-gray-400 hover:text-gray-500 flex-shrink-0"
                               >
                                 <XMarkIcon className="h-5 w-5" />
                               </button>
@@ -251,13 +251,13 @@ export default function Dashboard() {
 
                 {/* Sell Items Section */}
                 {sellItems.length > 0 && (
-                  <div className="mt-8">
+                  <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-4">Items for Sale</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {sellItems.map((item) => (
                         <div
                           key={item._id}
-                          className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+                          className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden w-full"
                         >
                           <div className="aspect-w-16 aspect-h-9 bg-gray-200">
                             {item.images && item.images[0] && (
@@ -270,13 +270,13 @@ export default function Dashboard() {
                           </div>
                           <div className="p-4">
                             <div className="flex items-start justify-between">
-                              <div>
+                              <div className="min-w-0 flex-1">
                                 <h4 className="text-base font-medium text-gray-900 truncate">{item.title}</h4>
                                 <p className="mt-1 text-sm text-gray-500 line-clamp-2">{item.description}</p>
                               </div>
                               <button
                                 onClick={() => openModal(item)}
-                                className="text-gray-400 hover:text-gray-500"
+                                className="ml-2 text-gray-400 hover:text-gray-500 flex-shrink-0"
                               >
                                 <XMarkIcon className="h-5 w-5" />
                               </button>
