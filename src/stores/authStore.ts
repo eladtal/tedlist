@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { API_BASE_URL } from '../config'
 
 interface User {
   _id: string
@@ -17,6 +18,7 @@ interface AuthState {
   login: (token: string, user: User) => void
   logout: () => void
   isInitialized: boolean
+  validateToken: () => Promise<boolean>
 }
 
 // Try to get initial state from localStorage
@@ -42,7 +44,7 @@ const getInitialState = () => {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...getInitialState(),
       login: (token: string, user: User) => {
         console.log('Logging in, setting auth state')
@@ -56,6 +58,39 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem('token')
         set({ user: null, token: null })
       },
+      validateToken: async () => {
+        const token = get().token
+        if (!token) return false
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/auth/validate`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+
+          const data = await response.json()
+          
+          if (!response.ok) {
+            console.error('Token validation failed:', data)
+            if (response.status === 401 || data.message === 'User not found' || data.message === 'Invalid token') {
+              get().logout()
+              return false
+            }
+          }
+
+          // Update user data if validation successful
+          if (data.user) {
+            set({ user: data.user })
+          }
+          
+          return true
+        } catch (error) {
+          console.error('Token verification error:', error)
+          get().logout()
+          return false
+        }
+      }
     }),
     {
       name: 'auth-storage',

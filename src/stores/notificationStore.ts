@@ -175,7 +175,9 @@ const useNotificationStore = create<NotificationStore>((set, get) => ({
 
       set({ connectionStatus: 'connecting', connectionAttempts: get().connectionAttempts + 1 });
 
-      const wsUrl = `ws://localhost:8000/ws`;
+      // Determine WebSocket URL based on API_BASE_URL
+      const wsProtocol = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
+      const wsUrl = `${wsProtocol}://${API_BASE_URL.split('://')[1]}/ws`;
       
       // Close existing socket if any
       const existingSocket = get().socket;

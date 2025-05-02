@@ -22,17 +22,20 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
           }
         });
         
+        const data = await response.json();
+        
         if (!response.ok) {
-          const data = await response.json();
           console.error('Token validation failed:', data);
-          // Only logout if it's a clear authentication error
-          if (response.status === 401) {
+          // Logout on any authentication error
+          if (response.status === 401 || data.message === 'User not found' || data.message === 'Invalid token') {
             logout();
+            return;
           }
         }
       } catch (error) {
         console.error('Token verification error:', error);
-        // Don't logout on network errors or other non-auth errors
+        // Logout on network errors to be safe
+        logout();
       }
     };
 
