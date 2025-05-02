@@ -4,7 +4,6 @@ import { useAuthStore } from '../stores/authStore'
 import { toast } from 'react-hot-toast'
 import axios from 'axios'
 import { API_BASE_URL } from '../config'
-import Onboarding from '../components/Onboarding'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -31,10 +30,6 @@ export default function Register() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Registration failed')
     }
-  }
-
-  const handleOnboardingComplete = () => {
-    navigate('/')
   }
 
   return (
@@ -110,8 +105,6 @@ export default function Register() {
               </button>
             </div>
           </form>
-          
-          <Onboarding onComplete={handleOnboardingComplete} />
         </div>
       </div>
     </div>
