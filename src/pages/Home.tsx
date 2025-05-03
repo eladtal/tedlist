@@ -31,7 +31,6 @@ export default function Home() {
   // Example XP data (replace with real data if available)
   const xp = 120;
   const xpGoal = 500;
-  const topTrader = user ? user.name : 'You'; // Replace with real top trader if available
 
   return (
     <div className="relative w-full min-h-screen bg-gradient-to-br from-[#e0f2fe] via-[#f0f7ff] to-[#eef2ff]">

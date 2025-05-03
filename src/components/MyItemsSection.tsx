@@ -1,5 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { getImageUrl } from '../utils/imageUtils';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';

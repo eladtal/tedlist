@@ -8,7 +8,7 @@ import { useNotificationStore } from '../stores/notificationStore'
 import MyItemsSection, { Item } from '../components/MyItemsSection'
 
 export default function Dashboard() {
-  const { user, token } = useAuthStore()
+  const { token } = useAuthStore()
   const { notifications } = useNotificationStore()
   const [items, setItems] = useState<Item[]>([])
   const [isLoading, setIsLoading] = useState(true)
