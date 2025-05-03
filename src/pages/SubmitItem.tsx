@@ -92,14 +92,16 @@ export default function SubmitItem() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pastel-purple via-white to-pastel-blue py-8">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Submit New Item</h1>
-          <p className="text-gray-600">Share something you'd like to trade with others.</p>
-        </div>
+    <div className="max-w-3xl mx-auto">
+      <div className="bg-white shadow-md rounded-xl overflow-hidden">
+        <div className="px-6 py-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Submit a New Item</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              Add details about your item to share it with others.
+            </p>
+          </div>
 
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-soft p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
