@@ -33,27 +33,27 @@ export default function Home() {
   const xpGoal = 500;
 
   return (
-    <div className="relative w-full min-h-screen bg-gradient-to-br from-[#e0f2fe] via-[#f0f7ff] to-[#eef2ff]">
-      <div className="w-full max-w-2xl mx-auto mt-24 mb-10 flex flex-col items-center">
-        <div className="w-full rounded-[2.5rem] border border-[#dbeafe] shadow-xl bg-gradient-to-br from-[#f0f9ff] via-[#f5f7ff] to-[#f3f4ff] px-6 py-10 relative overflow-hidden">
-          <div className="w-full text-center mt-6 mb-8">
-            {user ? (
-              <div>
-                <h1 className="text-4xl sm:text-5xl font-extrabold mb-3">
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#b197fc] to-[#7950f2]">
-                    Hey {user.name}!
-                  </span>
-                </h1>
-                <p className="text-2xl font-medium text-gray-700 mt-2">What would you like to do today?</p>
-              </div>
-            ) : (
-              <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-800 mb-2">
-                Welcome to <span className="text-[#b197fc]">Ted</span><span className="text-[#69db7c]">l</span><span className="text-[#ffa8a8]">ist</span>!
+    <div className="relative w-full min-h-screen bg-gradient-to-br from-[#e0f2fe] via-[#f0f7ff] to-[#eef2ff] flex justify-center">
+      <div className="w-full max-w-2xl mt-24 mb-10 px-6">
+        <div className="w-full text-center mt-6 mb-8">
+          {user ? (
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-extrabold mb-3">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#b197fc] to-[#7950f2]">
+                  Hey {user.name}!
+                </span>
               </h1>
-            )}
-          </div>
+              <p className="text-2xl font-medium text-gray-700 mt-2">What would you like to do today?</p>
+            </div>
+          ) : (
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-800 mb-2">
+              Welcome to <span className="text-[#b197fc]">Ted</span><span className="text-[#69db7c]">l</span><span className="text-[#ffa8a8]">ist</span>!
+            </h1>
+          )}
+        </div>
 
-          {/* XP Progress & Achievements */}
+        {/* XP Progress & Achievements */}
+        {user && (
           <div className="w-full flex flex-col items-center mb-8">
             <div className="w-full max-w-xs mx-auto rounded-2xl bg-white/80 shadow p-4 flex flex-col gap-2">
               <div className="flex items-center justify-between mb-1">
@@ -74,64 +74,64 @@ export default function Home() {
               </div>
             </div>
           </div>
+        )}
 
-          {/* Action Buttons */}
-          <div className="w-full flex flex-col gap-4 mt-8 mb-8">
-            <Link
-              to="/trade/select"
-              className="flex items-center gap-3 justify-center rounded-xl bg-[#d3f9d8] hover:bg-[#b2f2bb] text-[#2b8a3e] font-semibold text-lg py-4 shadow transition-all"
+        {/* Action Buttons */}
+        <div className="w-full flex flex-col gap-4 mt-8 mb-8">
+          <Link
+            to="/trade/select"
+            className="flex items-center gap-3 justify-center rounded-xl bg-[#d3f9d8] hover:bg-[#b2f2bb] text-[#2b8a3e] font-semibold text-lg py-4 shadow transition-all"
+          >
+            <ArrowPathRoundedSquareIcon className="h-7 w-7" />
+            Trade an Item
+          </Link>
+          
+          {/* Buy button (greyed out) */}
+          <div className="relative">
+            <div
+              className="flex items-center gap-3 justify-center rounded-xl bg-gray-100 text-gray-400 font-semibold text-lg py-4 shadow-sm cursor-not-allowed"
             >
-              <ArrowPathRoundedSquareIcon className="h-7 w-7" />
-              Trade an Item
-            </Link>
-            
-            {/* Buy button (greyed out) */}
-            <div className="relative">
-              <div
-                className="flex items-center gap-3 justify-center rounded-xl bg-gray-100 text-gray-400 font-semibold text-lg py-4 shadow-sm cursor-not-allowed"
-              >
-                <ShoppingBagIcon className="h-7 w-7" />
-                Buy Something
-              </div>
-              <span className="absolute -top-2 right-3 text-xs bg-gray-200 text-gray-500 rounded px-2 py-0.5">Coming Soon</span>
+              <ShoppingBagIcon className="h-7 w-7" />
+              Buy Something
             </div>
-            
-            {/* Sell button (greyed out) */}
-            <div className="relative">
-              <div
-                className="flex items-center gap-3 justify-center rounded-xl bg-gray-100 text-gray-400 font-semibold text-lg py-4 shadow-sm cursor-not-allowed"
-              >
-                <BriefcaseIcon className="h-7 w-7" />
-                Sell an Item
-              </div>
-              <span className="absolute -top-2 right-3 text-xs bg-gray-200 text-gray-500 rounded px-2 py-0.5">Coming Soon</span>
-            </div>
+            <span className="absolute -top-2 right-3 text-xs bg-gray-200 text-gray-500 rounded px-2 py-0.5">Coming Soon</span>
           </div>
-
-          {/* Popular Picks placeholder */}
-          <div className="w-full">
-            {/* TODO: Add Popular Picks carousel here */}
-          </div>
-          {user && (
-            <div className="w-full max-w-4xl mx-auto mt-12">
-              <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">My Items</h2>
-              {isLoading ? (
-                <div className="text-center text-gray-500">Loading your items...</div>
-              ) : error ? (
-                <div className="text-center text-red-500">{error}</div>
-              ) : items.length === 0 ? (
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <p className="text-gray-600">You don't have any items yet.</p>
-                  <Link to="/submit" className="inline-block mt-2 text-[#69db7c] hover:text-[#51cf66]">
-                    Submit your first item →
-                  </Link>
-                </div>
-              ) : (
-                <MyItemsSection items={items} showTradeButton />
-              )}
+          
+          {/* Sell button (greyed out) */}
+          <div className="relative">
+            <div
+              className="flex items-center gap-3 justify-center rounded-xl bg-gray-100 text-gray-400 font-semibold text-lg py-4 shadow-sm cursor-not-allowed"
+            >
+              <BriefcaseIcon className="h-7 w-7" />
+              Sell an Item
             </div>
-          )}
+            <span className="absolute -top-2 right-3 text-xs bg-gray-200 text-gray-500 rounded px-2 py-0.5">Coming Soon</span>
+          </div>
         </div>
+
+        {/* Popular Picks placeholder */}
+        <div className="w-full">
+          {/* TODO: Add Popular Picks carousel here */}
+        </div>
+        {user && (
+          <div className="w-full max-w-4xl mx-auto mt-12">
+            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">My Items</h2>
+            {isLoading ? (
+              <div className="text-center text-gray-500">Loading your items...</div>
+            ) : error ? (
+              <div className="text-center text-red-500">{error}</div>
+            ) : items.length === 0 ? (
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">You don't have any items yet.</p>
+                <Link to="/submit" className="inline-block mt-2 text-[#69db7c] hover:text-[#51cf66]">
+                  Submit your first item →
+                </Link>
+              </div>
+            ) : (
+              <MyItemsSection items={items} showTradeButton />
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

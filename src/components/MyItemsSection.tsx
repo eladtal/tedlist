@@ -37,24 +37,6 @@ export default function MyItemsSection({ items, onDelete, showTradeButton }: MyI
     tradeItemsStatuses: tradeItems.map(item => item.status)
   });
 
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return '';
-      }
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      return '';
-    }
-  };
-
   const handleTradeItem = async (item: Item) => {
     try {
       // Start the trading session with this item
@@ -117,7 +99,6 @@ export default function MyItemsSection({ items, onDelete, showTradeButton }: MyI
                     }`}>
                       {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                     </span>
-                    <span className="text-[10px] text-gray-400">{formatDate(item.createdAt)}</span>
                   </div>
                   {showTradeButton && (
                     <button
@@ -176,7 +157,6 @@ export default function MyItemsSection({ items, onDelete, showTradeButton }: MyI
                     }`}>
                       {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                     </span>
-                    <span className="text-xs text-gray-500">{formatDate(item.createdAt)}</span>
                   </div>
                 </div>
               </div>

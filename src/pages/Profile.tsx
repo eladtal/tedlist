@@ -49,134 +49,124 @@ export default function Profile() {
   }
 
   return (
-    <div className="py-6">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Profile</h1>
-      </div>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mt-6 overflow-hidden rounded-lg bg-white shadow">
-          <div className="px-4 py-5 sm:p-6">
-            {isEditing ? (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                    Name
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="name"
-                      id="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="input"
-                    />
-                  </div>
-                </div>
+    <div className="relative w-full min-h-screen bg-gradient-to-br from-[#e0f2fe] via-[#f0f7ff] to-[#eef2ff] flex justify-center">
+      <div className="w-full max-w-2xl mt-24 mb-10 px-6">
+        <h1 className="text-2xl font-semibold text-center mb-6">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#b197fc] to-[#7950f2]">
+            Your Profile
+          </span>
+        </h1>
+        
+        {isEditing ? (
+          <form onSubmit={handleSubmit} className="space-y-6 bg-white/80 rounded-[2.5rem] border border-[#dbeafe] shadow-xl p-8">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                id="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="appearance-none block w-full px-4 py-3 border border-[#dbeafe] bg-white/80 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#b197fc] focus:border-[#b197fc] focus:ring-2 transition-all sm:text-sm"
+              />
+            </div>
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="email"
-                      name="email"
-                      id="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="input"
-                    />
-                  </div>
-                </div>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                id="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="appearance-none block w-full px-4 py-3 border border-[#dbeafe] bg-white/80 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#b197fc] focus:border-[#b197fc] focus:ring-2 transition-all sm:text-sm"
+              />
+            </div>
 
-                <div>
-                  <label htmlFor="avatar" className="block text-sm font-medium text-gray-700">
-                    Avatar URL
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="url"
-                      name="avatar"
-                      id="avatar"
-                      value={formData.avatar}
-                      onChange={handleChange}
-                      className="input"
-                    />
-                  </div>
-                </div>
+            <div>
+              <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-1">
+                Avatar URL
+              </label>
+              <input
+                type="url"
+                name="avatar"
+                id="avatar"
+                value={formData.avatar}
+                onChange={handleChange}
+                className="appearance-none block w-full px-4 py-3 border border-[#dbeafe] bg-white/80 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#b197fc] focus:border-[#b197fc] focus:ring-2 transition-all sm:text-sm"
+              />
+            </div>
 
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-                  >
-                    Save
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium leading-6 text-gray-900">
-                    Profile Information
-                  </h3>
-                  <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                    Your personal details and preferences.
-                  </p>
-                </div>
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm border border-[#dbeafe] hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="rounded-xl px-4 py-2 text-sm font-medium text-white shadow-sm bg-gradient-to-r from-[#b197fc] to-[#7950f2] hover:from-[#9775fa] hover:to-[#6741d9] transition-all"
+              >
+                Save
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-6 bg-white/80 rounded-[2.5rem] border border-[#dbeafe] shadow-xl p-8">
+            <div className="text-center">
+              <p className="max-w-2xl text-sm text-gray-500 mx-auto">
+                Your personal details and preferences
+              </p>
+            </div>
 
-                <div className="border-t border-gray-200">
-                  <dl className="divide-y divide-gray-200">
-                    <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-                      <dt className="text-sm font-medium text-gray-500">Name</dt>
-                      <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                        {user?.name}
-                      </dd>
-                    </div>
-                    <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-                      <dt className="text-sm font-medium text-gray-500">Email</dt>
-                      <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                        {user?.email}
-                      </dd>
-                    </div>
-                    <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-                      <dt className="text-sm font-medium text-gray-500">Avatar</dt>
-                      <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                        {user?.avatar ? (
-                          <img
-                            src={user.avatar}
-                            alt="Profile"
-                            className="h-20 w-20 rounded-full"
-                          />
-                        ) : (
-                          'No avatar set'
-                        )}
-                      </dd>
-                    </div>
-                  </dl>
+            <div className="bg-white/80 rounded-xl shadow-sm p-6">
+              <dl className="divide-y divide-gray-100">
+                <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                  <dt className="text-sm font-medium text-gray-700">Name</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+                    {user?.name}
+                  </dd>
                 </div>
+                <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                  <dt className="text-sm font-medium text-gray-700">Email</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+                    {user?.email}
+                  </dd>
+                </div>
+                <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                  <dt className="text-sm font-medium text-gray-700">Avatar</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt="Profile"
+                        className="h-20 w-20 rounded-full object-cover border-2 border-[#dbeafe]"
+                      />
+                    ) : (
+                      'No avatar set'
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            </div>
 
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    className="rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-                  >
-                    Edit Profile
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="flex justify-end pt-4">
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="rounded-xl px-4 py-2 text-sm font-medium text-white shadow-sm bg-gradient-to-r from-[#b197fc] to-[#7950f2] hover:from-[#9775fa] hover:to-[#6741d9] transition-all"
+              >
+                Edit Profile
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
