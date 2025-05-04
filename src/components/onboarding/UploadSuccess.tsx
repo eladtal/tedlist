@@ -1,84 +1,62 @@
-import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 
 interface UploadSuccessProps {
-  itemImage?: string;
+  imageUrl?: string;
+  onClose?: () => void;
 }
 
-export default function UploadSuccess({ itemImage }: UploadSuccessProps) {
-  const navigate = useNavigate();
-  const { setCurrentStep, markFirstItemUploaded } = useOnboardingStore();
+export default function UploadSuccess({ imageUrl, onClose }: UploadSuccessProps) {
+  const { markFirstItemUploaded } = useOnboardingStore();
 
-  useEffect(() => {
+  React.useEffect(() => {
     markFirstItemUploaded();
   }, [markFirstItemUploaded]);
 
-  const handleContinue = () => {
-    setCurrentStep(3);
-    navigate('/swipe');
-  };
-
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.8, opacity: 0 }}
-          className="bg-white rounded-xl p-8 max-w-md w-full mx-4 text-center shadow-2xl"
-        >
-          {/* Progress Bar */}
-          <div className="mb-6">
-            <div className="h-2 bg-gray-200 rounded-full">
-              <div className="h-full w-2/3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" />
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-md w-full p-6 relative">
+        <div className="text-center">
+          <div className="mb-4">
+            <div className="mx-auto w-48 h-48 relative">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt="Uploaded item"
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
+                  <span className="text-gray-400">No preview available</span>
+                </div>
+              )}
             </div>
-            <p className="text-sm text-gray-600 mt-2">Step 2 of 3 complete</p>
           </div>
-
-          {/* Success Animation */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mb-6"
-          >
-            {itemImage ? (
-              <motion.div
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className="w-32 h-32 mx-auto mb-4 rounded-lg overflow-hidden"
-              >
-                <img src={itemImage} alt="Uploaded item" className="w-full h-full object-cover" />
-              </motion.div>
-            ) : (
-              <span className="text-5xl mb-4 inline-block">✨</span>
-            )}
-            
-            <h2 className="text-2xl font-bold mb-2">Great! Your item is live.</h2>
-            
-            {/* Coin Reward Animation */}
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.5, type: "spring" }}
-              className="text-lg text-yellow-500 font-semibold mb-4"
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Item Uploaded Successfully! 🎉
+          </h3>
+          <p className="text-sm text-gray-500 mb-6">
+            Your item has been added to the marketplace. Start swiping to find items to trade!
+          </p>
+          <div className="flex flex-col space-y-3">
+            <Link
+              to="/swipe"
+              className="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              onClick={onClose}
             >
-              🧸 You've earned 30 Teddies Coins
-            </motion.div>
-          </motion.div>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleContinue}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-          >
-            Start Swiping
-          </motion.button>
-        </motion.div>
+              Start Swiping
+            </Link>
+            <button
+              type="button"
+              className="inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              onClick={onClose}
+            >
+              Add Another Item
+            </button>
+          </div>
+        </div>
       </div>
-    </AnimatePresence>
+    </div>
   );
 } 

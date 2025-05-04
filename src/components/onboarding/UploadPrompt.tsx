@@ -5,7 +5,11 @@ import { useOnboardingStore } from '../../stores/onboardingStore';
 
 export default function UploadPrompt() {
   const navigate = useNavigate();
-  const { currentStep } = useOnboardingStore();
+
+  const handleUpload = () => {
+    // Navigate to the submit page
+    navigate('/submit');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white py-12 px-4">
@@ -19,13 +23,14 @@ export default function UploadPrompt() {
           <div className="h-2 bg-gray-200 rounded-full">
             <div className="h-full w-1/3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" />
           </div>
-          <p className="text-sm text-gray-600 mt-2">Step {currentStep} of 3</p>
+          <p className="text-sm text-gray-600 mt-2">Step 2 of 3</p>
         </div>
 
         {/* Ghost Item Card */}
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="bg-white rounded-xl p-6 shadow-lg border-2 border-dashed border-gray-300 mb-8"
+          className="bg-white rounded-xl p-6 shadow-lg border-2 border-dashed border-gray-300 mb-8 cursor-pointer"
+          onClick={handleUpload}
         >
           <div className="bg-gray-100 h-48 rounded-lg mb-4 flex items-center justify-center">
             <svg
@@ -60,7 +65,7 @@ export default function UploadPrompt() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/submit-item')}
+          onClick={handleUpload}
           className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
         >
           Upload Item

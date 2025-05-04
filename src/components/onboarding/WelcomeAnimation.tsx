@@ -19,7 +19,7 @@ export default function WelcomeAnimation() {
 
   const handleContinue = () => {
     setCurrentStep(2);
-    navigate('/submit-item');
+    navigate('/submit');
   };
 
   return (

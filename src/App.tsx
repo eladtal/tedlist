@@ -7,10 +7,9 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
-import Admin from './pages/Admin'
 import SubmitItem from './pages/SubmitItem'
 import ItemSelection from './components/ItemSelection'
-import SwipeInterface from './components/SwipeInterface'
+import Swipe from './pages/Swipe'
 import Notifications from './pages/Notifications'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
@@ -27,15 +26,14 @@ const App: React.FC = () => {
           <Route path="register" element={<Register />} />
           <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="admin" element={<AdminRoute><Admin /></AdminRoute>} />
           <Route path="submit" element={<ProtectedRoute><SubmitItem /></ProtectedRoute>} />
           <Route path="notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route path="my-deals" element={<ProtectedRoute><MyDeals /></ProtectedRoute>} />
+          <Route path="swipe" element={<ProtectedRoute><Swipe /></ProtectedRoute>} />
           <Route path="trade">
             <Route path="select" element={<ProtectedRoute><ItemSelection /></ProtectedRoute>} />
-            <Route path="swipe" element={<ProtectedRoute><SwipeInterface /></ProtectedRoute>} />
           </Route>
-          <Route path="admin-panel" element={<AdminRoute><AdminPanel /></AdminRoute>} />
+          <Route path="admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
         </Route>
       </Routes>
       <Toaster position="bottom-right" />

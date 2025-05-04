@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
@@ -27,45 +27,120 @@ export default function SubmitItem() {
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   const { token } = useAuthStore()
   const { currentStep, hasUploadedFirstItem } = useOnboardingStore()
   const navigate = useNavigate()
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
+    if (!e.target.files?.length) return;
+    
+    const files = Array.from(e.target.files)
     if (files.length + images.length > 5) {
       toast.error('You can upload a maximum of 5 images')
       return
     }
 
-    setImages(prev => [...prev, ...files])
+    // Validate file types and sizes
+    const validFiles = files.filter(file => {
+      const isValidType = ['image/jpeg', 'image/png', 'image/gif'].includes(file.type)
+      const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB limit
+      
+      if (!isValidType) {
+        toast.error(`${file.name} is not a valid image type`)
+      }
+      if (!isValidSize) {
+        toast.error(`${file.name} is too large (max 10MB)`)
+      }
+      
+      return isValidType && isValidSize
+    })
 
-    // Create preview URLs
-    const newPreviewUrls = files.map(file => URL.createObjectURL(file))
-    setPreviewUrls(prev => [...prev, ...newPreviewUrls])
+    if (validFiles.length) {
+      setImages(prev => [...prev, ...validFiles])
+      // Create preview URLs
+      const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file))
+      setPreviewUrls(prev => [...prev, ...newPreviewUrls])
+    }
+
+    // Reset the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   const removeImage = (index: number) => {
+    URL.revokeObjectURL(previewUrls[index]) // Clean up the URL
     setImages(prev => prev.filter((_, i) => i !== index))
     setPreviewUrls(prev => prev.filter((_, i) => i !== index))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
-    setIsLoading(true)
+    e.stopPropagation()
+    
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length + images.length > 5) {
+      toast.error('You can upload a maximum of 5 images')
+      return
+    }
+
+    handleFiles(files)
+  }
+
+  const handleFiles = (files: File[]) => {
+    const validFiles = files.filter(file => {
+      const isValidType = ['image/jpeg', 'image/png', 'image/gif'].includes(file.type)
+      const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB limit
+      
+      if (!isValidType) {
+        toast.error(`${file.name} is not a valid image type`)
+      }
+      if (!isValidSize) {
+        toast.error(`${file.name} is too large (max 10MB)`)
+      }
+      
+      return isValidType && isValidSize
+    })
+
+    if (validFiles.length) {
+      setImages(prev => [...prev, ...validFiles])
+      const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file))
+      setPreviewUrls(prev => [...prev, ...newPreviewUrls])
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Submit clicked', { images, title, description, condition, type });
+    
+    if (images.length === 0) {
+      toast.error('Please upload at least one image');
+      return;
+    }
+
+    if (!title.trim()) {
+      toast.error('Please enter a title');
+      return;
+    }
+    
+    setIsLoading(true);
 
     try {
-      const formData = new FormData()
-      formData.append('title', title)
-      formData.append('description', description)
-      formData.append('condition', condition)
-      formData.append('type', type)
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('condition', condition);
+      formData.append('type', type);
       
-      images.forEach((image) => {
-        formData.append('images', image)
-      })
+      images.forEach((image, index) => {
+        formData.append('images', image);
+        console.log(`Adding image ${index}:`, image.name);
+      });
 
+      console.log('Making API request to:', `${API_BASE_URL}/api/items`);
+      
       const response = await axios.post(
         `${API_BASE_URL}/api/items`,
         formData,
@@ -75,22 +150,45 @@ export default function SubmitItem() {
             'Content-Type': 'multipart/form-data',
           },
         }
-      )
+      );
 
+      console.log('Response received:', response.data);
+      
       if (response.data) {
-        // Set the first uploaded image URL for the success animation
-        const uploadedImageUrl = response.data.images?.[0] || ''
-        setUploadedImageUrl(uploadedImageUrl)
-        setShowSuccess(true)
+        // Get the full image URL from the response
+        let imageUrl = '';
+        if (response.data.images && response.data.images.length > 0) {
+          // Use the preview URL we already have for immediate display
+          imageUrl = previewUrls[0];
+        }
+
+        setUploadedImageUrl(imageUrl);
+        setShowSuccess(true);
+        toast.success('Item submitted successfully!');
+        
+        // Clear form after successful upload
+        setTitle('');
+        setDescription('');
+        setCondition('Good');
+        setType('trade');
+        setImages([]);
+        setPreviewUrls([]);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to submit item')
-      setIsLoading(false)
+      console.error('Submit error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      toast.error(error.response?.data?.message || 'Failed to submit item');
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   // Show the upload prompt for first-time users
-  if (currentStep === 2 && !hasUploadedFirstItem) {
+  if (currentStep === 2 && !hasUploadedFirstItem && window.location.pathname !== '/submit') {
     return <UploadPrompt />
   }
 
@@ -101,55 +199,62 @@ export default function SubmitItem() {
           <h2 className="text-2xl font-bold text-center mb-8">Submit Your Item</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Images
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Images (up to 5)
               </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
-                <div className="space-y-1 text-center">
-                  <svg
-                    className="mx-auto h-12 w-12 text-gray-400"
-                    stroke="currentColor"
-                    fill="none"
-                    viewBox="0 0 48 48"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <div className="flex text-sm text-gray-600">
-                    <label className="relative cursor-pointer bg-white rounded-md font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500">
-                      <span>Upload images</span>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        className="sr-only"
-                        onChange={handleImageChange}
-                      />
-                    </label>
-                    <p className="pl-1">or drag and drop</p>
+              <div className="mt-1 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
+                <div className="space-y-4 text-center">
+                  <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="flex flex-col items-center text-sm text-gray-600">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.multiple = true;
+                        input.accept = 'image/jpeg,image/png,image/gif';
+                        input.onchange = (e) => {
+                          const target = e.target as HTMLInputElement;
+                          if (target.files) {
+                            handleImageChange({ target } as React.ChangeEvent<HTMLInputElement>);
+                          }
+                        };
+                        input.click();
+                      }}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                    >
+                      Choose Files
+                    </button>
+                    <p className="text-gray-500 mt-2">or drag and drop</p>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</p>
                   </div>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
                 </div>
               </div>
+              
+              {/* Image Previews */}
               {previewUrls.length > 0 && (
                 <div className="mt-4 grid grid-cols-3 gap-4">
                   {previewUrls.map((url, index) => (
-                    <div key={index} className="relative">
+                    <div key={index} className="relative group">
                       <img
                         src={url}
                         alt={`Preview ${index + 1}`}
                         className="h-24 w-full object-cover rounded-lg"
                       />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
+
+            {/* Rest of the form fields remain unchanged */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700">
                 Title
@@ -218,7 +323,16 @@ export default function SubmitItem() {
           </form>
         </div>
       </div>
-      {showSuccess && <UploadSuccess itemImage={uploadedImageUrl} />}
+      {/* Success Modal */}
+      {showSuccess && (
+        <UploadSuccess
+          imageUrl={uploadedImageUrl}
+          onClose={() => {
+            setShowSuccess(false);
+            setUploadedImageUrl('');
+          }}
+        />
+      )}
     </>
   )
 } 
