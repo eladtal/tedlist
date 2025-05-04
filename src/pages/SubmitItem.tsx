@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { API_BASE_URL } from '../config'
@@ -17,21 +16,19 @@ interface FormData {
   type: 'trade' | 'sell'
 }
 
-export default function SubmitItem() {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [condition, setCondition] = useState<FormData['condition']>('Good')
-  const [type, setType] = useState<FormData['type']>('trade')
+const SubmitItem: React.FC = () => {
   const [images, setImages] = useState<File[]>([])
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [condition, setCondition] = useState('good')
+  const [type, setType] = useState('toy')
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const { token } = useAuthStore()
   const { currentStep, hasUploadedFirstItem } = useOnboardingStore()
-  const navigate = useNavigate()
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -74,19 +71,6 @@ export default function SubmitItem() {
     URL.revokeObjectURL(previewUrls[index]) // Clean up the URL
     setImages(prev => prev.filter((_, i) => i !== index))
     setPreviewUrls(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length + images.length > 5) {
-      toast.error('You can upload a maximum of 5 images')
-      return
-    }
-
-    handleFiles(files)
   }
 
   const handleFiles = (files: File[]) => {
@@ -155,22 +139,14 @@ export default function SubmitItem() {
       console.log('Response received:', response.data);
       
       if (response.data) {
-        // Get the full image URL from the response
-        let imageUrl = '';
-        if (response.data.images && response.data.images.length > 0) {
-          // Use the preview URL we already have for immediate display
-          imageUrl = previewUrls[0];
-        }
-
-        setUploadedImageUrl(imageUrl);
         setShowSuccess(true);
         toast.success('Item submitted successfully!');
         
         // Clear form after successful upload
         setTitle('');
         setDescription('');
-        setCondition('Good');
-        setType('trade');
+        setCondition('good');
+        setType('toy');
         setImages([]);
         setPreviewUrls([]);
       }
@@ -202,7 +178,23 @@ export default function SubmitItem() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Images (up to 5)
               </label>
-              <div className="mt-1 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
+              <div
+                className="mt-1 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg"
+                onDrop={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  const files = Array.from(e.dataTransfer.files)
+                  if (files.length + images.length > 5) {
+                    toast.error('You can upload a maximum of 5 images')
+                    return
+                  }
+                  handleFiles(files)
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }}
+              >
                 <div className="space-y-4 text-center">
                   <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
                   <div className="flex flex-col items-center text-sm text-gray-600">
@@ -326,13 +318,14 @@ export default function SubmitItem() {
       {/* Success Modal */}
       {showSuccess && (
         <UploadSuccess
-          imageUrl={uploadedImageUrl}
+          imageUrl={previewUrls[0]}
           onClose={() => {
             setShowSuccess(false);
-            setUploadedImageUrl('');
           }}
         />
       )}
     </>
   )
-} 
+}
+
+export default SubmitItem 

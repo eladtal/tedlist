@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
 import { useAuthStore } from '../stores/authStore';
@@ -112,16 +112,14 @@ export default function Swipe() {
   const handleSwipe = async (liked: boolean) => {
     if (currentIndex >= items.length) return;
 
-    const currentItem = items[currentIndex];
-    
     try {
       // TODO: Implement the actual like/dislike API call here
       if (liked) {
         toast.success('Liked! 👍');
-        // await axios.post(`${API_BASE_URL}/api/trading/like/${currentItem.id}`);
+        // await axios.post(`${API_BASE_URL}/api/trading/like/${items[currentIndex].id}`);
       } else {
         toast('Maybe next time! 👎');
-        // await axios.post(`${API_BASE_URL}/api/trading/dislike/${currentItem.id}`);
+        // await axios.post(`${API_BASE_URL}/api/trading/dislike/${items[currentIndex].id}`);
       }
       
       // Move to next item
@@ -201,6 +199,7 @@ export default function Swipe() {
   }
 
   const currentItem = items[currentIndex];
+  if (!currentItem) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white p-8">

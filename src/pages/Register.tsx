@@ -1,19 +1,21 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { toast } from 'react-hot-toast'
 import axios from 'axios'
 import { API_BASE_URL } from '../config'
 import WelcomeAnimation from '../components/onboarding/WelcomeAnimation'
 
-export default function Register() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
+const Register: React.FC = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  })
   const [isLoading, setIsLoading] = useState(false)
-  const [showWelcome, setShowWelcome] = useState(false)
   const { login } = useAuthStore()
-  const navigate = useNavigate()
+  const [showWelcome, setShowWelcome] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,9 +23,9 @@ export default function Register() {
     
     try {
       const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
-        email,
-        password,
-        name
+        email: formData.email,
+        password: formData.password,
+        name: formData.name
       })
 
       if (response.data.token) {
@@ -49,8 +51,8 @@ export default function Register() {
               <input
                 type="text"
                 id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
                 required
               />
@@ -62,8 +64,8 @@ export default function Register() {
               <input
                 type="email"
                 id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
                 required
               />
@@ -75,8 +77,21 @@ export default function Register() {
               <input
                 type="password"
                 id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
                 required
               />
@@ -100,4 +115,6 @@ export default function Register() {
       {showWelcome && <WelcomeAnimation />}
     </>
   )
-} 
+}
+
+export default Register 

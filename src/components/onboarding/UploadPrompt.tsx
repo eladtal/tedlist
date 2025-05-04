@@ -1,7 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useOnboardingStore } from '../../stores/onboardingStore';
 
 export default function UploadPrompt() {
   const navigate = useNavigate();
