@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import TeddyBalance from './TeddyBalance';
 import { ArrowLeftIcon, HeartIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL } from '../config';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from 'react-hot-toast';
+import { useOnboardingStore } from '../stores/onboardingStore';
+import SwipeTutorial from './onboarding/SwipeTutorial';
+import SwipeCompletion from './onboarding/SwipeCompletion';
 
 interface SwipeItem {
   _id: string;
@@ -41,6 +44,7 @@ const SwipeInterface: React.FC = () => {
   const [matchedUser, setMatchedUser] = useState<string>('');
   const [teddyBonus, setTeddyBonus] = useState(0);
   const navigate = useNavigate();
+  const { currentStep, swipeCount, incrementSwipeCount, hasCompletedFirstSwipes } = useOnboardingStore();
 
   useEffect(() => {
     const init = async () => {
@@ -146,6 +150,9 @@ const SwipeInterface: React.FC = () => {
         console.log('Running low on items, fetching more...');
         await fetchItems();
       }
+
+      // Increment swipe count for onboarding
+      incrementSwipeCount();
     } catch (error) {
       console.error('Error recording swipe:', error);
       if (axios.isAxiosError(error)) {
@@ -213,6 +220,30 @@ const SwipeInterface: React.FC = () => {
 
   const currentItem = items[currentIndex];
   console.log('Rendering current item:', currentItem);
+
+  // Show tutorial for first-time users
+  if (currentStep === 3 && !hasCompletedFirstSwipes) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white py-12">
+        <SwipeTutorial />
+        <div className="max-w-md mx-auto px-4">
+          {items.length > 0 && currentIndex < items.length ? (
+            <SwipeCard
+              item={currentItem}
+              direction={null}
+              onSwipe={handleSwipe}
+            />
+          ) : (
+            <div className="text-center text-gray-600">
+              No more items to show right now.
+            </div>
+          )}
+        </div>
+        {/* Show completion modal after 3 swipes */}
+        {swipeCount >= 3 && <SwipeCompletion />}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50">
@@ -327,5 +358,63 @@ const SwipeInterface: React.FC = () => {
     </div>
   );
 };
+
+interface SwipeCardProps {
+  item: SwipeItem;
+  direction: 'left' | 'right' | null;
+  onSwipe: (direction: 'left' | 'right') => void;
+}
+
+function SwipeCard({ item, direction, onSwipe }: SwipeCardProps) {
+  return (
+    <motion.div
+      initial={{ scale: 1 }}
+      animate={{
+        scale: 1,
+        x: direction === 'left' ? -300 : direction === 'right' ? 300 : 0,
+        opacity: direction ? 0 : 1,
+        rotate: direction === 'left' ? -20 : direction === 'right' ? 20 : 0,
+      }}
+      transition={{ duration: 0.3 }}
+      className="bg-white rounded-xl overflow-hidden shadow-xl"
+    >
+      <div className="relative">
+        <img
+          src={item.images[0]}
+          alt={item.title}
+          className="w-full h-96 object-cover"
+        />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-6">
+          <h3 className="text-2xl font-bold text-white">{item.title}</h3>
+          <p className="text-gray-200 mt-2">{item.description}</p>
+        </div>
+      </div>
+      
+      <div className="flex justify-center space-x-4 p-4">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => onSwipe('left')}
+          className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center"
+        >
+          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </motion.button>
+        
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => onSwipe('right')}
+          className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center"
+        >
+          <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+}
 
 export default SwipeInterface; 
