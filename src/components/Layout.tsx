@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { Menu } from '@headlessui/react'
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, UserIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline'
 import NotificationPanel from './NotificationPanel'
 
 const Layout: React.FC = () => {
@@ -105,11 +105,7 @@ const Layout: React.FC = () => {
                                 active ? 'bg-gray-100' : ''
                               } flex items-center px-4 py-2 text-sm text-gray-700`}
                             >
-                              <img
-                                src="/user-icon.png"
-                                alt="User Icon"
-                                className="mr-3 h-5 w-5 text-gray-400"
-                              />
+                              <UserIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
                               Profile
                             </Link>
                           )}
@@ -136,11 +132,7 @@ const Layout: React.FC = () => {
                                 active ? 'bg-gray-100' : ''
                               } flex w-full items-center px-4 py-2 text-sm text-gray-700`}
                             >
-                              <img
-                                src="/logout-icon.png"
-                                alt="Logout Icon"
-                                className="mr-3 h-5 w-5 text-gray-400"
-                              />
+                              <ArrowLeftOnRectangleIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
                               Logout
                             </button>
                           )}
