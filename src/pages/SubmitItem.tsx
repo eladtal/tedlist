@@ -21,10 +21,11 @@ const SubmitItem: React.FC = () => {
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [condition, setCondition] = useState('good')
-  const [type, setType] = useState('toy')
+  const [condition, setCondition] = useState('Good')
+  const [type, setType] = useState('trade')
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const { token } = useAuthStore()
@@ -139,14 +140,15 @@ const SubmitItem: React.FC = () => {
       console.log('Response received:', response.data);
       
       if (response.data) {
+        setUploadedImageUrl(response.data.images[0]); // Store the first image URL
         setShowSuccess(true);
         toast.success('Item submitted successfully!');
         
         // Clear form after successful upload
         setTitle('');
         setDescription('');
-        setCondition('good');
-        setType('toy');
+        setCondition('Good');
+        setType('trade');
         setImages([]);
         setPreviewUrls([]);
       }
@@ -301,7 +303,7 @@ const SubmitItem: React.FC = () => {
                 onChange={(e) => setType(e.target.value as FormData['type'])}
                 className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
               >
-                <option value="trade">Trade-In</option>
+                <option value="trade">Trade</option>
                 <option value="sell">Sell</option>
               </select>
             </div>
@@ -318,9 +320,10 @@ const SubmitItem: React.FC = () => {
       {/* Success Modal */}
       {showSuccess && (
         <UploadSuccess
-          imageUrl={previewUrls[0]}
+          imageUrl={uploadedImageUrl}
           onClose={() => {
             setShowSuccess(false);
+            setUploadedImageUrl('');
           }}
         />
       )}
